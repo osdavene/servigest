@@ -6,6 +6,7 @@
 ![Laravel Version](https://img.shields.io/badge/Laravel-11%20%2F%2012-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 ![Alpine.js](https://img.shields.io/badge/Alpine.js-3.x-8BC0D0?style=for-the-badge&logo=alpinedotjs&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Architecture-Multi--Tenant%20SaaS-0284c7?style=for-the-badge)
+![Deploy](https://img.shields.io/badge/AWS-CloudPanel%20CI%2FCD-FF9900?style=for-the-badge&logo=amazonwebservices&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 **Plataforma SaaS Multi-Empresa diseñada para talleres de servicio técnico de electrodomésticos, cómputo, smartphones, climatización y herramientas industriales.**
