@@ -1,15 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Clientes\ActualizarClienteRequest;
+use App\Http\Requests\Clientes\GuardarClienteRequest;
 use App\Models\Cliente;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ClienteController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $busqueda = $request->input('buscar');
+        $this->authorize('viewAny', Cliente::class);
+
+        $busqueda = trim((string)$request->input('buscar'));
 
         $clientes = Cliente::query()
             ->when($busqueda, function ($query, $buscar) {
@@ -32,13 +41,15 @@ class ClienteController extends Controller
     }
 
     /**
-     * API de Búsqueda Inteligente en tiempo real (por Nombre, Cédula / Documento, Teléfono, Barrio).
+     * API de Búsqueda en tiempo real para autocompletados.
      */
-    public function apiBuscar(Request $request)
+    public function apiBuscar(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Cliente::class);
+
         $busqueda = trim((string)$request->input('q'));
 
-        $query = Cliente::with('equipos.categoria');
+        $query = Cliente::with('equipos.categoria:id,nombre');
 
         if (!empty($busqueda)) {
             $query->where(function ($q) use ($busqueda) {
@@ -57,39 +68,27 @@ class ClienteController extends Controller
         return response()->json($clientes);
     }
 
-    public function create()
+    public function create(): View
     {
+        $this->authorize('create', Cliente::class);
+
         return view('clientes.crear');
     }
 
-    public function store(Request $request)
+    public function store(GuardarClienteRequest $request): RedirectResponse
     {
-        $validados = $request->validate([
-            'nombre_completo' => ['required', 'string', 'max:150'],
-            'identificacion' => ['nullable', 'string', 'max:50'],
-            'telefono' => ['required', 'string', 'max:30'],
-            'telefono_secundario' => ['nullable', 'string', 'max:30'],
-            'email' => ['nullable', 'email', 'max:150'],
-            'direccion' => ['required', 'string', 'max:255'],
-            'barrio' => ['nullable', 'string', 'max:100'],
-            'ciudad' => ['nullable', 'string', 'max:100'],
-            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
-            'notas_adicionales' => ['nullable', 'string'],
-        ], [
-            'nombre_completo.required' => 'El nombre completo del cliente es obligatorio.',
-            'telefono.required' => 'El teléfono principal es obligatorio para contacto y WhatsApp.',
-            'direccion.required' => 'La dirección es obligatoria.',
-        ]);
+        $this->authorize('create', Cliente::class);
 
-        $cliente = Cliente::create($validados);
+        $cliente = Cliente::create($request->validated());
 
         return redirect()->route('clientes.show', $cliente)
             ->with('exito', "Cliente {$cliente->nombre_completo} registrado exitosamente.");
     }
 
-    public function show(Cliente $cliente)
+    public function show(Cliente $cliente): View
     {
+        $this->authorize('view', $cliente);
+
         $cliente->load(['equipos.categoria', 'ordenesTrabajo' => function ($q) {
             $q->with('equipo')->latest('id');
         }]);
@@ -97,35 +96,27 @@ class ClienteController extends Controller
         return view('clientes.ver', compact('cliente'));
     }
 
-    public function edit(Cliente $cliente)
+    public function edit(Cliente $cliente): View
     {
+        $this->authorize('update', $cliente);
+
         return view('clientes.editar', compact('cliente'));
     }
 
-    public function update(Request $request, Cliente $cliente)
+    public function update(ActualizarClienteRequest $request, Cliente $cliente): RedirectResponse
     {
-        $validados = $request->validate([
-            'nombre_completo' => ['required', 'string', 'max:150'],
-            'identificacion' => ['nullable', 'string', 'max:50'],
-            'telefono' => ['required', 'string', 'max:30'],
-            'telefono_secundario' => ['nullable', 'string', 'max:30'],
-            'email' => ['nullable', 'email', 'max:150'],
-            'direccion' => ['required', 'string', 'max:255'],
-            'barrio' => ['nullable', 'string', 'max:100'],
-            'ciudad' => ['nullable', 'string', 'max:100'],
-            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
-            'notas_adicionales' => ['nullable', 'string'],
-        ]);
+        $this->authorize('update', $cliente);
 
-        $cliente->update($validados);
+        $cliente->update($request->validated());
 
         return redirect()->route('clientes.show', $cliente)
             ->with('exito', 'Datos del cliente actualizados.');
     }
 
-    public function destroy(Cliente $cliente)
+    public function destroy(Cliente $cliente): RedirectResponse
     {
+        $this->authorize('delete', $cliente);
+
         $cliente->delete();
 
         return redirect()->route('clientes.index')

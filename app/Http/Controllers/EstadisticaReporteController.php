@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Categoria;
@@ -8,6 +10,7 @@ use App\Models\Usuario;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EstadisticaReporteController extends Controller
@@ -17,11 +20,13 @@ class EstadisticaReporteController extends Controller
      */
     public function index(Request $request)
     {
-        $filtros = $this->obtenerFiltros($request);
-        $datos = $this->calcularEstadisticas($filtros);
+        $this->authorize('viewAny', OrdenTrabajo::class);
 
-        $tecnicos = Usuario::where('rol', 'tecnico')->orderBy('nombre')->get();
-        $categorias = Categoria::orderBy('nombre')->get();
+        $filtros = $this->obtenerFiltros($request);
+        $datos = $this->calcularEstadisticasConCache($filtros);
+
+        $tecnicos = Usuario::where('rol', 'tecnico')->orderBy('nombre')->get(['id', 'nombre', 'apellido']);
+        $categorias = Categoria::orderBy('nombre')->get(['id', 'nombre']);
 
         return view('informes.index', array_merge($datos, [
             'filtros' => $filtros,
@@ -35,6 +40,8 @@ class EstadisticaReporteController extends Controller
      */
     public function exportarPdf(Request $request)
     {
+        $this->authorize('viewAny', OrdenTrabajo::class);
+
         $taller = auth()->user()->taller;
         $filtros = $this->obtenerFiltros($request);
         $datos = $this->calcularEstadisticas($filtros);
@@ -56,9 +63,11 @@ class EstadisticaReporteController extends Controller
      */
     public function exportarCsv(Request $request): StreamedResponse
     {
+        $this->authorize('viewAny', OrdenTrabajo::class);
+
         $filtros = $this->obtenerFiltros($request);
         $ordenes = $this->construirConsulta($filtros)
-            ->with(['cliente', 'equipo.categoria', 'tecnico'])
+            ->with(['cliente:id,nombre_completo,identificacion,telefono', 'equipo.categoria:id,nombre', 'tecnico:id,nombre,apellido'])
             ->latest('fecha_ingreso')
             ->get();
 
@@ -74,10 +83,8 @@ class EstadisticaReporteController extends Controller
 
         $callback = function () use ($ordenes) {
             $archivo = fopen('php://output', 'w');
-            // BOM UTF-8 para que Excel lo abra con acentos correctos
-            fprintf($archivo, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($archivo, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8
 
-            // Encabezados
             fputcsv($archivo, [
                 'Codigo OT',
                 'Fecha Ingreso',
@@ -128,9 +135,6 @@ class EstadisticaReporteController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    /**
-     * Procesa y normaliza los parámetros de filtrado.
-     */
     private function obtenerFiltros(Request $request): array
     {
         $periodo = $request->input('periodo', 'este_mes');
@@ -192,9 +196,6 @@ class EstadisticaReporteController extends Controller
         ];
     }
 
-    /**
-     * Construye la consulta base aplicando los filtros seleccionados.
-     */
     private function construirConsulta(array $filtros)
     {
         return OrdenTrabajo::query()
@@ -205,13 +206,19 @@ class EstadisticaReporteController extends Controller
             ->when($filtros['estado'], fn($q, $e) => $q->where('estado', $e));
     }
 
-    /**
-     * Calcula métricas financieras, operativas y agrupaciones por técnico y categoría.
-     */
+    private function calcularEstadisticasConCache(array $filtros): array
+    {
+        $tallerId = auth()->user()->taller_id ?? session('taller_id_activo', 0);
+        $filtrosHash = md5(json_encode($filtros));
+        $cacheKey = "stats_taller_{$tallerId}_{$filtrosHash}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(5), fn() => $this->calcularEstadisticas($filtros));
+    }
+
     private function calcularEstadisticas(array $filtros): array
     {
         $ordenes = $this->construirConsulta($filtros)
-            ->with(['cliente', 'equipo.categoria', 'tecnico'])
+            ->with(['cliente:id,nombre_completo', 'equipo:id,marca,modelo,categoria_id', 'equipo.categoria:id,nombre', 'tecnico:id,nombre,apellido,rol'])
             ->get();
 
         $ordenesCerradas = $ordenes->whereIn('estado', ['finalizado', 'entregado']);
@@ -242,7 +249,7 @@ class EstadisticaReporteController extends Controller
         }
         $tiempoPromedioDias = count($duracionesEnDias) > 0 ? round(array_sum($duracionesEnDias) / count($duracionesEnDias), 1) : 0;
 
-        // 4. Desglose por Categoría de Dispositivo
+        // 4. Desglose por Categoría
         $porCategoria = [];
         foreach ($ordenes->groupBy('equipo.categoria.nombre') as $nombreCat => $grupo) {
             $nombre = $nombreCat ?: 'Sin Categoría';
@@ -260,7 +267,7 @@ class EstadisticaReporteController extends Controller
 
         // 5. Productividad y Rendimiento por Técnico
         $porTecnico = [];
-        $tecnicosTaller = Usuario::where('rol', 'tecnico')->get();
+        $tecnicosTaller = Usuario::where('rol', 'tecnico')->get(['id', 'nombre', 'apellido']);
         foreach ($tecnicosTaller as $tec) {
             $ordenesTec = $ordenes->where('tecnico_asignado_id', $tec->id);
             $cerradasTec = $ordenesTec->whereIn('estado', ['finalizado', 'entregado']);
@@ -278,7 +285,7 @@ class EstadisticaReporteController extends Controller
         }
         usort($porTecnico, fn($a, $b) => $b['ingresos_generados'] <=> $a['ingresos_generados']);
 
-        // 6. Modalidad del Servicio (Taller vs Domicilio)
+        // 6. Modalidad del Servicio
         $conteoTaller = $ordenes->where('tipo_ubicacion', 'ingresado_al_taller')->count();
         $conteoDomicilio = $ordenes->where('tipo_ubicacion', 'servicio_en_domicilio')->count();
         $ingresosTaller = $ordenes->where('tipo_ubicacion', 'ingresado_al_taller')->whereIn('estado', ['finalizado', 'entregado'])->sum('costo_total');

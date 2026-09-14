@@ -1,22 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Actions\Equipos\ActualizarEquipoAction;
+use App\Actions\Equipos\CrearEquipoAction;
+use App\Http\Requests\Equipos\ActualizarEquipoRequest;
+use App\Http\Requests\Equipos\GuardarEquipoRequest;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Equipo;
-use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class EquipoController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
+        $this->authorize('viewAny', Equipo::class);
+
         $busqueda = trim((string)$request->input('buscar'));
         $categoriaId = $request->input('categoria_id');
         $soloMantenimiento = $request->boolean('alerta_mantenimiento');
 
-        $equipos = Equipo::with(['cliente', 'categoria'])
+        $equipos = Equipo::with(['cliente:id,nombre_completo,identificacion,telefono', 'categoria:id,nombre'])
             ->withCount('ordenesTrabajo')
             ->when($busqueda, function ($query, $buscar) {
                 $query->where(function ($q) use ($buscar) {
@@ -30,24 +39,21 @@ class EquipoController extends Controller
                       });
                 });
             })
-            ->when($categoriaId, function ($query, $catId) {
-                $query->where('categoria_id', $catId);
-            })
-            ->when($soloMantenimiento, function ($query) {
-                $query->whereNotNull('fecha_proximo_mantenimiento')
-                      ->where('fecha_proximo_mantenimiento', '<=', now()->addDays(7));
-            })
+            ->when($categoriaId, fn($q, $catId) => $q->where('categoria_id', $catId))
+            ->when($soloMantenimiento, fn($q) => $q->whereNotNull('fecha_proximo_mantenimiento')->where('fecha_proximo_mantenimiento', '<=', now()->addDays(7)))
             ->latest('id')
             ->paginate(15)
             ->withQueryString();
 
-        $categorias = Categoria::orderBy('nombre')->get();
+        $categorias = Categoria::orderBy('nombre')->get(['id', 'nombre']);
 
         return view('equipos.index', compact('equipos', 'categorias', 'busqueda', 'categoriaId', 'soloMantenimiento'));
     }
 
-    public function show(Equipo $equipo)
+    public function show(Equipo $equipo): View
     {
+        $this->authorize('view', $equipo);
+
         $equipo->load([
             'cliente',
             'categoria',
@@ -59,8 +65,10 @@ class EquipoController extends Controller
         return view('equipos.ver', compact('equipo'));
     }
 
-    public function create(Request $request)
+    public function create(Request $request): View
     {
+        $this->authorize('create', Equipo::class);
+
         $clienteSeleccionadoId = $request->input('cliente_id');
         $clientes = Cliente::orderBy('nombre_completo')->get();
         $categorias = Categoria::orderBy('nombre')->get();
@@ -68,68 +76,40 @@ class EquipoController extends Controller
         return view('equipos.crear', compact('clientes', 'categorias', 'clienteSeleccionadoId'));
     }
 
-    public function store(Request $request)
+    public function store(GuardarEquipoRequest $request, CrearEquipoAction $action): RedirectResponse
     {
-        $validados = $request->validate([
-            'cliente_id' => ['required', 'exists:clientes,id'],
-            'categoria_id' => ['required', 'exists:categorias,id'],
-            'marca' => ['required', 'string', 'max:80'],
-            'modelo' => ['required', 'string', 'max:100'],
-            'numero_serie' => ['nullable', 'string', 'max:100'],
-            'observaciones_fisicas' => ['nullable', 'string'],
-            'fecha_ultimo_servicio' => ['nullable', 'date'],
-            'fecha_proximo_mantenimiento' => ['nullable', 'date'],
-        ], [
-            'cliente_id.required' => 'Debe asociar el equipo a un cliente.',
-            'categoria_id.required' => 'Debe seleccionar una categoría.',
-            'marca.required' => 'La marca es obligatoria.',
-            'modelo.required' => 'El modelo es obligatorio.',
-        ]);
+        $this->authorize('create', Equipo::class);
 
-        // Si no especificó fecha de próximo mantenimiento pero la categoría tiene intervalo, se calcula
-        if (empty($validados['fecha_proximo_mantenimiento'])) {
-            $categoria = Categoria::find($validados['categoria_id']);
-            if ($categoria && $categoria->requiere_mantenimiento_preventivo && $categoria->intervalo_mantenimiento_dias) {
-                $fechaBase = !empty($validados['fecha_ultimo_servicio']) ? Carbon::parse($validados['fecha_ultimo_servicio']) : now();
-                $validados['fecha_proximo_mantenimiento'] = $fechaBase->copy()->addDays($categoria->intervalo_mantenimiento_dias)->toDateString();
-            }
-        }
-
-        $equipo = Equipo::create($validados);
+        $equipo = $action->execute($request->validated());
 
         return redirect()->route('equipos.show', $equipo)
             ->with('exito', "Equipo {$equipo->marca} {$equipo->modelo} registrado exitosamente.");
     }
 
-    public function edit(Equipo $equipo)
+    public function edit(Equipo $equipo): View
     {
+        $this->authorize('update', $equipo);
+
         $clientes = Cliente::orderBy('nombre_completo')->get();
         $categorias = Categoria::orderBy('nombre')->get();
 
         return view('equipos.editar', compact('equipo', 'clientes', 'categorias'));
     }
 
-    public function update(Request $request, Equipo $equipo)
+    public function update(ActualizarEquipoRequest $request, Equipo $equipo, ActualizarEquipoAction $action): RedirectResponse
     {
-        $validados = $request->validate([
-            'cliente_id' => ['required', 'exists:clientes,id'],
-            'categoria_id' => ['required', 'exists:categorias,id'],
-            'marca' => ['required', 'string', 'max:80'],
-            'modelo' => ['required', 'string', 'max:100'],
-            'numero_serie' => ['nullable', 'string', 'max:100'],
-            'observaciones_fisicas' => ['nullable', 'string'],
-            'fecha_ultimo_servicio' => ['nullable', 'date'],
-            'fecha_proximo_mantenimiento' => ['nullable', 'date'],
-        ]);
+        $this->authorize('update', $equipo);
 
-        $equipo->update($validados);
+        $action->execute($equipo, $request->validated());
 
         return redirect()->route('equipos.show', $equipo)
             ->with('exito', 'Equipo actualizado correctamente.');
     }
 
-    public function destroy(Equipo $equipo)
+    public function destroy(Equipo $equipo): RedirectResponse
     {
+        $this->authorize('delete', $equipo);
+
         $equipo->delete();
 
         return redirect()->route('equipos.index')
