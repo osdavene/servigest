@@ -1,0 +1,55 @@
+name: 🚀 Despliegue Automático a AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Desplegar en Servidor AWS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: 🔐 Ejecutar Despliegue en AWS vía SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: ${{ secrets.AWS_PORT || 22 }}
+          script_stop: true
+          script: |
+            echo "🚀 Iniciando despliegue de ServiGest..."
+            cd ${{ secrets.AWS_PROJECT_PATH }}
+
+            # 1. Poner aplicación en modo mantenimiento temporal
+            php artisan down --render="errors.503" --secret="deploy-bypass-token" || true
+
+            # 2. Descargar últimos cambios de GitHub
+            git pull origin main
+
+            # 3. Instalar dependencias de producción
+            composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+            # 4. Ejecutar migraciones de base de datos
+            php artisan migrate --force
+
+            # 5. Optimizar y recompilar cachés de producción
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # 6. Crear enlace simbólico de almacenamiento si no existe
+            php artisan storage:link || true
+
+            # 7. Reiniciar PHP-FPM para vaciar OPcache
+            sudo systemctl reload php8.4-fpm || sudo systemctl reload php-fpm || sudo service php8.4-fpm reload || true
+
+            # 8. Reactivar la aplicación
+            php artisan up
+
+            echo "✅ ¡Despliegue completado exitosamente en AWS!"
