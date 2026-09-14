@@ -26,27 +26,28 @@ jobs:
             echo "🚀 Iniciando despliegue de ServiGest en CloudPanel..."
             cd ${{ secrets.AWS_PROJECT_PATH }}
 
-            # 1. Poner en mantenimiento
-            php artisan down --secret="deploy-bypass-token" || true
+            # Configurar directorio seguro para Git
+            sudo git config --global --add safe.directory ${{ secrets.AWS_PROJECT_PATH }}
 
-            # 2. Descargar últimos cambios
-            git pull origin main
+            # 1. Descargar últimos cambios como usuario del sitio
+            sudo -u servigest git fetch origin main
+            sudo -u servigest git reset --hard origin/main
 
-            # 3. Dependencias de producción
-            composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+            # 2. Instalar/actualizar dependencias
+            sudo -u servigest composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-            # 4. Migraciones
-            php artisan migrate --force
+            # 3. Ejecutar migraciones de base de datos
+            sudo -u servigest php artisan migrate --force
 
-            # 5. Optimizar cachés
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+            # 4. Limpiar y recompilar cachés
+            sudo -u servigest php artisan config:cache
+            sudo -u servigest php artisan route:cache
+            sudo -u servigest php artisan view:cache
 
-            # 6. Enlace de almacenamiento
-            php artisan storage:link || true
+            # 5. Enlace simbólico de almacenamiento
+            sudo -u servigest php artisan storage:link || true
 
-            # 7. Reactivar la aplicación
-            php artisan up
+            # 6. Asegurar que la aplicación esté SIEMPRE activa
+            sudo -u servigest php artisan up || true
 
-            echo "✅ ¡Despliegue completado exitosamente en AWS CloudPanel!"
+            echo "✅ ¡Despliegue completado exitosamente con 0 downtime!"
