@@ -26,8 +26,9 @@ class EvidenciaFotograficaController extends Controller
             'etiqueta.required' => 'Seleccione una clasificación para la evidencia.',
         ]);
 
-        // Compresión automática tipo WhatsApp: reduce fotos de 5MB-10MB a ~250KB-400KB con nitidez Full HD
-        $carpetaDestino = "evidencias/{$orden->taller_id}/{$orden->id}";
+        // Compresión y almacenamiento organizado por taller y cliente
+        $clienteId = $orden->cliente_id ?: 'general';
+        $carpetaDestino = "servigest/talleres/taller_{$orden->taller_id}/clientes/cliente_{$clienteId}/ordenes/orden_{$orden->id}/evidencias";
         $rutaOptimizada = OptimizadorImagenes::optimizarYGuardar($request->file('foto'), $carpetaDestino);
 
         EvidenciaFotografica::create([
@@ -42,12 +43,12 @@ class EvidenciaFotograficaController extends Controller
     }
 
     /**
-     * Elimina una evidencia y su archivo optimizado en disco.
+     * Elimina una evidencia y su archivo (Cloudinary o almacenamiento local).
      */
     public function destroy(EvidenciaFotografica $evidencia)
     {
-        if ($evidencia->ruta_imagen && Storage::disk('public')->exists($evidencia->ruta_imagen)) {
-            Storage::disk('public')->delete($evidencia->ruta_imagen);
+        if ($evidencia->ruta_imagen) {
+            OptimizadorImagenes::eliminar($evidencia->ruta_imagen);
         }
 
         $evidencia->delete();

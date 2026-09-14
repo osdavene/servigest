@@ -109,7 +109,19 @@ class OrdenTrabajo extends Model
         $url = $this->url_publica_reporte;
         $tallerNombre = $this->taller?->nombre_comercial ?? 'Servicio Técnico';
         $mensaje = urlencode("Hola {$this->cliente?->nombre}, le compartimos el informe técnico de su orden de servicio {$this->codigo_orden} en {$tallerNombre}. Puede consultarlo y descargarlo aquí: {$url}");
-
         return "https://wa.me/{$telefono}?text={$mensaje}";
+    }
+
+    public function getUrlFirmaClienteAttribute(): ?string
+    {
+        if (!$this->ruta_firma_cliente) {
+            return null;
+        }
+
+        if (str_starts_with($this->ruta_firma_cliente, 'http://') || str_starts_with($this->ruta_firma_cliente, 'https://')) {
+            return $this->ruta_firma_cliente;
+        }
+
+        return asset('storage/' . $this->ruta_firma_cliente);
     }
 }

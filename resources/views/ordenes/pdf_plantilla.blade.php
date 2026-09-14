@@ -141,8 +141,14 @@
     <table class="header">
         <tr>
             <td style="width: 60%;">
-                @if($orden->taller?->logo_ruta && file_exists(storage_path('app/public/' . $orden->taller->logo_ruta)))
-                    <img src="{{ storage_path('app/public/' . $orden->taller->logo_ruta) }}" style="max-height: 44px; max-width: 160px; margin-bottom: 6px; display: block;">
+                @if($orden->taller?->url_logo)
+                    @php
+                        $logoSrc = $orden->taller->url_logo;
+                        if (!str_starts_with($logoSrc, 'http') && file_exists(storage_path('app/public/' . $orden->taller->logo_ruta))) {
+                            $logoSrc = storage_path('app/public/' . $orden->taller->logo_ruta);
+                        }
+                    @endphp
+                    <img src="{{ $logoSrc }}" style="max-height: 44px; max-width: 160px; margin-bottom: 6px; display: block;">
                 @endif
                 <div class="empresa-nombre">{{ $orden->taller?->nombre_comercial ?? 'ServiGest Taller' }}</div>
                 <div class="empresa-datos">
@@ -243,24 +249,39 @@
         </div>
 
         <div class="firma-box">
-            @if($orden->ruta_firma_cliente && file_exists(public_path('storage/' . $orden->ruta_firma_cliente)))
-                <img src="{{ public_path('storage/' . $orden->ruta_firma_cliente) }}" class="firma-img" alt="Firma"><br>
+            @if($orden->url_firma_cliente)
+                @php
+                    $firmaSrc = $orden->url_firma_cliente;
+                    if (!str_starts_with($firmaSrc, 'http') && file_exists(storage_path('app/public/' . $orden->ruta_firma_cliente))) {
+                        $firmaSrc = storage_path('app/public/' . $orden->ruta_firma_cliente);
+                    }
+                @endphp
+                <img src="{{ $firmaSrc }}" class="firma-img" alt="Firma"><br>
             @endif
             <strong>{{ $orden->nombre_firmante ?? $orden->cliente?->nombre_completo }}</strong><br>
+            <span style="font-size: 8px; color: #64748b;">Firma de Conformidad / Aceptación</span>
+        </div>
+    </div>
+
     <!-- Galería de Evidencias Fotográficas del Servicio -->
     @if($orden->evidencias && $orden->evidencias->count() > 0)
         <div class="seccion-titulo" style="clear: both; margin-top: 18px;">Registro y Evidencias Fotográficas del Servicio</div>
         <table style="width: 100%; margin-top: 6px; border-collapse: collapse;">
             <tr>
                 @foreach($orden->evidencias as $index => $evi)
-                    @php $rutaFoto = $evi->ruta_imagen ?? $evi->ruta_archivo; @endphp
+                    @php
+                        $rutaFoto = $evi->url_imagen;
+                        if (!str_starts_with($rutaFoto, 'http') && file_exists(storage_path('app/public/' . $evi->ruta_imagen))) {
+                            $rutaFoto = storage_path('app/public/' . $evi->ruta_imagen);
+                        }
+                    @endphp
                     @if($index > 0 && $index % 3 == 0)
                         </tr><tr>
                     @endif
                     <td style="width: 33.33%; padding: 4px; vertical-align: top;">
                         <div style="border: 1px solid #cbd5e1; padding: 4px; text-align: center; border-radius: 4px; background: #ffffff;">
-                            @if($rutaFoto && file_exists(storage_path('app/public/' . $rutaFoto)))
-                                <img src="{{ storage_path('app/public/' . $rutaFoto) }}" style="width: 100%; height: 95px; object-fit: cover; border-radius: 2px;">
+                            @if($rutaFoto)
+                                <img src="{{ $rutaFoto }}" style="width: 100%; height: 95px; object-fit: cover; border-radius: 2px;">
                             @endif
                             <div style="font-size: 7.5px; font-weight: bold; color: #0284c7; margin-top: 3px;">
                                 {{ $evi->nombre_etiqueta }}

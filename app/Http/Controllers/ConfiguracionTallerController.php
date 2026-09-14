@@ -65,11 +65,12 @@ class ConfiguracionTallerController extends Controller
         // Procesar subida del Logo de la Empresa
         if ($request->hasFile('logo')) {
             // Eliminar logo anterior si existe
-            if ($taller->logo_ruta && Storage::disk('public')->exists($taller->logo_ruta)) {
-                Storage::disk('public')->delete($taller->logo_ruta);
+            if ($taller->logo_ruta) {
+                \App\Services\OptimizadorImagenes::eliminar($taller->logo_ruta);
             }
 
-            $validados['logo_ruta'] = \App\Services\OptimizadorImagenes::optimizarYGuardar($request->file('logo'), "logos/{$taller->id}", 800, 90);
+            $carpetaLogo = "servigest/talleres/taller_{$taller->id}/logos";
+            $validados['logo_ruta'] = \App\Services\OptimizadorImagenes::optimizarYGuardar($request->file('logo'), $carpetaLogo, 800, 90);
         }
 
         // Sanitizar prefijo de orden (mayúsculas y sin caracteres especiales)

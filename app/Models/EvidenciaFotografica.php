@@ -41,10 +41,18 @@ class EvidenciaFotografica extends Model
     }
 
     /**
-     * URL pública de la imagen.
+     * URL pública de la imagen (Cloudinary o Storage local).
      */
     public function getUrlImagenAttribute(): string
     {
+        if (empty($this->ruta_imagen)) {
+            return '';
+        }
+
+        if (str_starts_with($this->ruta_imagen, 'http://') || str_starts_with($this->ruta_imagen, 'https://')) {
+            return $this->ruta_imagen;
+        }
+
         return asset('storage/' . $this->ruta_imagen);
     }
 }

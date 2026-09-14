@@ -253,7 +253,7 @@
                             <span style="font-size: 11px; color: #6b7280;">Fecha: {{ $orden->fecha_firma?->format('d/m/Y h:i A') }}</span>
                         </div>
 
-                        <img src="{{ asset('storage/' . $orden->ruta_firma_cliente) }}" alt="Firma Cliente" style="max-height: 60px; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 4px;">
+                        <img src="{{ $orden->url_firma_cliente }}" alt="Firma Cliente" style="max-height: 60px; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 4px;">
                     </div>
                 @endif
             </div>

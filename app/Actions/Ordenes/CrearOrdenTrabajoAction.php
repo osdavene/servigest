@@ -33,7 +33,8 @@ final class CrearOrdenTrabajoAction
 
             // Si se incluyó foto inicial de recepción
             if ($fotoInicial !== null) {
-                $carpetaDestino = "evidencias/{$orden->taller_id}/{$orden->id}";
+                $clienteId = $orden->cliente_id ?: 'general';
+                $carpetaDestino = "servigest/talleres/taller_{$orden->taller_id}/clientes/cliente_{$clienteId}/ordenes/orden_{$orden->id}/evidencias";
                 $rutaOptimizada = OptimizadorImagenes::optimizarYGuardar($fotoInicial, $carpetaDestino);
 
                 EvidenciaFotografica::create([

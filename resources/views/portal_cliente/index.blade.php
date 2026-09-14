@@ -219,7 +219,7 @@
             <div class="header-content">
                 <div class="brand-box">
                     @if($taller->url_logo)
-                        <img src="{{ asset('storage/' . $taller->logo_ruta) }}" alt="Logo" class="brand-logo">
+                        <img src="{{ $taller->url_logo }}" alt="Logo" class="brand-logo">
                     @endif
                     <div>
                         <div class="brand-name">{{ $taller->nombre_comercial }}</div>

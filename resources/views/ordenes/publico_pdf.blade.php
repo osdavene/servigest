@@ -134,13 +134,13 @@
         @endif
 
         <!-- Firma Digital si existe -->
-        @if($orden->ruta_firma_cliente)
+        @if($orden->url_firma_cliente)
             <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
                 <div>
                     <span class="text-xs font-bold text-slate-700 block">Comprobante de Entrega y Firma</span>
                     <span class="text-xs text-slate-500">Firmado por: {{ $orden->nombre_firmante ?? $orden->cliente?->nombre_completo }}</span>
                 </div>
-                <img src="{{ asset('storage/' . $orden->ruta_firma_cliente) }}" alt="Firma" class="h-12 bg-white border border-slate-200 rounded p-1">
+                <img src="{{ $orden->url_firma_cliente }}" alt="Firma" class="h-12 bg-white border border-slate-200 rounded p-1">
             </div>
         @endif
 

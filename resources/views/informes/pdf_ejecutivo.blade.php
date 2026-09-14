@@ -146,7 +146,13 @@
         <tr>
             <td style="width: 55%;">
                 @if($taller->url_logo)
-                    <img src="{{ public_path('storage/' . str_replace('/storage/', '', $taller->url_logo)) }}" class="header-logo" alt="Logo">
+                    @php
+                        $logoSrc = $taller->url_logo;
+                        if (!str_starts_with($logoSrc, 'http') && file_exists(storage_path('app/public/' . $taller->logo_ruta))) {
+                            $logoSrc = storage_path('app/public/' . $taller->logo_ruta);
+                        }
+                    @endphp
+                    <img src="{{ $logoSrc }}" class="header-logo" alt="Logo">
                 @else
                     <div class="company-name">{{ $taller->nombre_comercial }}</div>
                 @endif

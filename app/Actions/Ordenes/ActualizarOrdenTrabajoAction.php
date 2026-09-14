@@ -37,14 +37,15 @@ final class ActualizarOrdenTrabajoAction
             }
 
             // 2. Procesamiento de Firma Digital
-            if (!empty($firmaBase64) && preg_match('/^data:image\/(\w+);base64,/', $firmaBase64, $tipo)) {
-                $datosDecodificados = base64_decode(substr($firmaBase64, strpos($firmaBase64, ',') + 1));
-                $extension = strtolower($tipo[1]);
-                $nombreArchivo = "firmas/{$orden->taller_id}/orden_{$orden->id}_firma_" . time() . ".{$extension}";
+            if (!empty($firmaBase64)) {
+                $clienteId = $orden->cliente_id ?: 'general';
+                $carpetaFirmas = "servigest/talleres/taller_{$orden->taller_id}/clientes/cliente_{$clienteId}/ordenes/orden_{$orden->id}/firmas";
+                $rutaFirma = OptimizadorImagenes::optimizarYGuardar($firmaBase64, $carpetaFirmas, 800, 95);
 
-                Storage::disk('public')->put($nombreArchivo, $datosDecodificados);
-                $datos['ruta_firma_cliente'] = $nombreArchivo;
-                $datos['fecha_firma'] = now();
+                if (!empty($rutaFirma)) {
+                    $datos['ruta_firma_cliente'] = $rutaFirma;
+                    $datos['fecha_firma'] = now();
+                }
             }
 
             // 3. Actualizar la orden
@@ -86,7 +87,8 @@ final class ActualizarOrdenTrabajoAction
 
     private function procesarFotoCierre(OrdenTrabajo $orden, UploadedFile $foto, ?string $descripcion): void
     {
-        $carpetaDestino = "evidencias/{$orden->taller_id}/{$orden->id}";
+        $clienteId = $orden->cliente_id ?: 'general';
+        $carpetaDestino = "servigest/talleres/taller_{$orden->taller_id}/clientes/cliente_{$clienteId}/ordenes/orden_{$orden->id}/evidencias";
         $rutaOptimizada = OptimizadorImagenes::optimizarYGuardar($foto, $carpetaDestino);
 
         EvidenciaFotografica::create([

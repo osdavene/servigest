@@ -135,7 +135,7 @@
         <!-- Encabezado Taller -->
         <div class="text-center">
             @if($taller->url_logo)
-                <img src="{{ asset('storage/' . $taller->logo_ruta) }}" alt="Logo" class="logo-img">
+                <img src="{{ $taller->url_logo }}" alt="Logo" class="logo-img">
             @endif
             <div class="bold" style="font-size: {{ $anchoPapel == '58' ? '13px' : '15px' }};">{{ strtoupper($taller->nombre_comercial) }}</div>
             @if($taller->identificacion_fiscal)

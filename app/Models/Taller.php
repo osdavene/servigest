@@ -94,10 +94,18 @@ class Taller extends Model
 
     public function getUrlLogoAttribute(): ?string
     {
-        if ($this->logo_ruta && Storage::disk('public')->exists($this->logo_ruta)) {
+        if (!$this->logo_ruta) {
+            return null;
+        }
+
+        if (str_starts_with($this->logo_ruta, 'http://') || str_starts_with($this->logo_ruta, 'https://')) {
+            return $this->logo_ruta;
+        }
+
+        if (Storage::disk('public')->exists($this->logo_ruta)) {
             return Storage::url($this->logo_ruta);
         }
 
-        return null;
+        return asset('storage/' . $this->logo_ruta);
     }
 }
