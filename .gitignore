@@ -4,6 +4,7 @@
 /public/storage
 /storage/*.key
 /storage/app/private/respaldos_talleres/*
+/storage/framework/testing/*
 /vendor
 .env
 .env.backup
