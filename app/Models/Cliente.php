@@ -42,6 +42,11 @@ class Cliente extends Model
 
     public function getUrlPortalAttribute(): string
     {
+        if (empty($this->token_portal)) {
+            $this->token_portal = bin2hex(random_bytes(24));
+            $this->saveQuietly();
+        }
+
         return route('portal.cliente', $this->token_portal);
     }
 

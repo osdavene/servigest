@@ -29,7 +29,7 @@
 
             <!-- Botones Rápidos de Comunicación y Portal -->
             <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <a href="{{ route('portal.cliente', $cliente->token_portal) }}" target="_blank" class="btn btn-primary" style="background: #0284c7; box-shadow: 0 6px 14px rgba(2, 132, 199, 0.3);">
+                <a href="{{ $cliente->url_portal }}" target="_blank" class="btn btn-primary" style="background: #0284c7; box-shadow: 0 6px 14px rgba(2, 132, 199, 0.3);">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     <span>Portal Cliente B2B</span>
                 </a>
