@@ -23,33 +23,30 @@ jobs:
           port: ${{ secrets.AWS_PORT || 22 }}
           script_stop: true
           script: |
-            echo "🚀 Iniciando despliegue de ServiGest..."
+            echo "🚀 Iniciando despliegue de ServiGest en CloudPanel..."
             cd ${{ secrets.AWS_PROJECT_PATH }}
 
-            # 1. Poner aplicación en modo mantenimiento temporal
-            php artisan down --render="errors.503" --secret="deploy-bypass-token" || true
+            # 1. Poner en mantenimiento
+            php artisan down --secret="deploy-bypass-token" || true
 
-            # 2. Descargar últimos cambios de GitHub
+            # 2. Descargar últimos cambios
             git pull origin main
 
-            # 3. Instalar dependencias de producción
+            # 3. Dependencias de producción
             composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-            # 4. Ejecutar migraciones de base de datos
+            # 4. Migraciones
             php artisan migrate --force
 
-            # 5. Optimizar y recompilar cachés de producción
+            # 5. Optimizar cachés
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
 
-            # 6. Crear enlace simbólico de almacenamiento si no existe
+            # 6. Enlace de almacenamiento
             php artisan storage:link || true
 
-            # 7. Reiniciar PHP-FPM para vaciar OPcache
-            sudo systemctl reload php8.4-fpm || sudo systemctl reload php-fpm || sudo service php8.4-fpm reload || true
-
-            # 8. Reactivar la aplicación
+            # 7. Reactivar la aplicación
             php artisan up
 
-            echo "✅ ¡Despliegue completado exitosamente en AWS!"
+            echo "✅ ¡Despliegue completado exitosamente en AWS CloudPanel!"
