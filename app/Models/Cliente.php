@@ -28,7 +28,22 @@ class Cliente extends Model
         'latitud',
         'longitud',
         'notas_adicionales',
+        'token_portal',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($cliente) {
+            if (empty($cliente->token_portal)) {
+                $cliente->token_portal = bin2hex(random_bytes(24));
+            }
+        });
+    }
+
+    public function getUrlPortalAttribute(): string
+    {
+        return route('portal.cliente', $this->token_portal);
+    }
 
     public function taller(): BelongsTo
     {

@@ -43,6 +43,15 @@ class ConfiguracionTallerController extends Controller
             'texto_garantia' => ['nullable', 'string', 'max:1000'],
             'prefijo_orden' => ['nullable', 'string', 'max:10'],
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp,svg', 'max:3072'], // Max 3MB
+            'whatsapp_auto_notify_enabled' => ['nullable', 'boolean'],
+            'whatsapp_api_provider' => ['nullable', 'string', 'in:webhook_personalizado,whatsapp_cloud_api,ultramsg'],
+            'whatsapp_api_token' => ['nullable', 'string', 'max:1000'],
+            'whatsapp_phone_number_id' => ['nullable', 'string', 'max:100'],
+            'whatsapp_webhook_url' => ['nullable', 'url', 'max:255'],
+            'whatsapp_template_creada' => ['nullable', 'string', 'max:1000'],
+            'whatsapp_template_en_proceso' => ['nullable', 'string', 'max:1000'],
+            'whatsapp_template_finalizada' => ['nullable', 'string', 'max:1000'],
+            'whatsapp_template_entregada' => ['nullable', 'string', 'max:1000'],
         ], [
             'nombre_comercial.required' => 'El nombre del taller es obligatorio.',
             'telefono.required' => 'El teléfono de contacto es obligatorio.',
@@ -50,6 +59,8 @@ class ConfiguracionTallerController extends Controller
             'logo.image' => 'El archivo seleccionado debe ser una imagen válida.',
             'logo.max' => 'El logo no debe superar los 3 MB de tamaño.',
         ]);
+
+        $validados['whatsapp_auto_notify_enabled'] = $request->boolean('whatsapp_auto_notify_enabled');
 
         // Procesar subida del Logo de la Empresa
         if ($request->hasFile('logo')) {

@@ -38,7 +38,12 @@ Route::post('/control-central', [AutenticacionController::class, 'iniciarSesionS
 
 // Rutas Públicas de Consulta e Informe para Clientes (acceso directo desde enlace de WhatsApp)
 Route::get('/servicio/{token}', [ReportePdfController::class, 'verPdfPublico'])->name('ordenes.pdf.publico');
+Route::get('/servicio/{token}/ver', [ReportePdfController::class, 'verPdfPublico'])->name('ordenes.publico');
 Route::get('/servicio/{token}/descargar-pdf', [ReportePdfController::class, 'descargarPdfPublico'])->name('ordenes.pdf.descargar_publico');
+
+// Portal de Autoservicio para Clientes B2B
+Route::get('/portal/{token}', [\App\Http\Controllers\PortalClienteController::class, 'index'])->name('portal.cliente');
+Route::post('/portal/{token}/solicitar', [\App\Http\Controllers\PortalClienteController::class, 'solicitarServicio'])->name('portal.cliente.solicitar');
 
 // Rutas Protegidas del Sistema
 Route::middleware(['auth'])->group(function () {
@@ -63,6 +68,8 @@ Route::middleware(['auth'])->group(function () {
         // Gestión de Órdenes de Trabajo
         Route::resource('ordenes', OrdenTrabajoController::class)->parameters(['ordenes' => 'orden']);
         Route::get('/ordenes/{orden}/descargar-pdf', [ReportePdfController::class, 'descargarPdf'])->name('ordenes.pdf.descargar');
+        Route::get('/ordenes/{orden}/ticket-pos', [\App\Http\Controllers\TicketPosController::class, 'ticket'])->name('ordenes.ticket.pos');
+        Route::get('/ordenes/{orden}/etiqueta-qr', [\App\Http\Controllers\TicketPosController::class, 'etiqueta'])->name('ordenes.etiqueta.qr');
 
         // Evidencias Fotográficas
         Route::post('/ordenes/{orden}/evidencias', [EvidenciaFotograficaController::class, 'store'])->name('evidencias.store');

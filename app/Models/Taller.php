@@ -28,10 +28,20 @@ class Taller extends Model
         'logo_ruta',
         'estado_suscripcion',
         'fecha_vencimiento_suscripcion',
+        'whatsapp_auto_notify_enabled',
+        'whatsapp_api_provider',
+        'whatsapp_api_token',
+        'whatsapp_phone_number_id',
+        'whatsapp_webhook_url',
+        'whatsapp_template_creada',
+        'whatsapp_template_en_proceso',
+        'whatsapp_template_finalizada',
+        'whatsapp_template_entregada',
     ];
 
     protected $casts = [
         'fecha_vencimiento_suscripcion' => 'date',
+        'whatsapp_auto_notify_enabled' => 'boolean',
     ];
 
     public function planLicencia(): BelongsTo

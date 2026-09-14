@@ -45,6 +45,9 @@ final class CrearOrdenTrabajoAction
                 ]);
             }
 
+            // Notificación automática si está configurada
+            \App\Services\WhatsAppNotificationService::enviarNotificacionAutomatica($orden, 'creada');
+
             return $orden;
         });
     }

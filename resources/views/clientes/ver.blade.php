@@ -27,8 +27,13 @@
                 </div>
             </div>
 
-            <!-- Botones Rápidos de Comunicación -->
+            <!-- Botones Rápidos de Comunicación y Portal -->
             <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <a href="{{ route('portal.cliente', $cliente->token_portal) }}" target="_blank" class="btn btn-primary" style="background: #0284c7; box-shadow: 0 6px 14px rgba(2, 132, 199, 0.3);">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span>Portal Cliente B2B</span>
+                </a>
+
                 <a href="{{ $cliente->enlace_whatsapp }}" target="_blank" class="btn btn-emerald" style="box-shadow: 0 6px 14px rgba(16, 185, 129, 0.3);">
                     <i class="fa-brands fa-whatsapp" style="font-size: 16px;"></i>
                     <span>WhatsApp Directo</span>
@@ -44,7 +49,7 @@
                     <span>Waze</span>
                 </a>
 
-                <a href="{{ route('clientes.edit', $cliente) }}" class="btn btn-outline">
+                <a href="{{ route('clientes.edit', $cliente) }}" class="btn btn-dark">
                     <i class="fa-solid fa-pen-to-square"></i>
                     <span>Editar</span>
                 </a>

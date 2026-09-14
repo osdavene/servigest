@@ -58,6 +58,16 @@
                     <span>Descargar PDF</span>
                 </a>
 
+                <a href="{{ route('ordenes.ticket.pos', $orden) }}" target="_blank" class="btn btn-amber" style="background: #f59e0b; color: #fff; box-shadow: 0 6px 14px rgba(245, 158, 11, 0.3);">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span>Ticket POS</span>
+                </a>
+
+                <a href="{{ route('ordenes.etiqueta.qr', $orden) }}" target="_blank" class="btn btn-indigo" style="background: #6366f1; color: #fff; box-shadow: 0 6px 14px rgba(99, 102, 241, 0.3);">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>Etiqueta QR</span>
+                </a>
+
                 @if($orden->estado !== 'finalizado' && $orden->estado !== 'entregado')
                     <a href="{{ route('ordenes.edit', ['orden' => $orden, 'accion' => 'cerrar']) }}" class="btn btn-primary" style="box-shadow: 0 6px 14px rgba(2, 132, 199, 0.35);">
                         <i class="fa-solid fa-check-double"></i>

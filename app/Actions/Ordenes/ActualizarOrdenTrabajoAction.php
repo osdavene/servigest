@@ -60,6 +60,9 @@ final class ActualizarOrdenTrabajoAction
                 $this->procesarFotoCierre($orden, $fotoCierre, $descripcionFoto);
             }
 
+            // 6. Notificación automática si cambió de estado
+            \App\Services\WhatsAppNotificationService::enviarNotificacionAutomatica($orden, 'cambio_estado');
+
             return $orden->fresh(['cliente', 'equipo', 'tecnico', 'evidencias']);
         });
     }

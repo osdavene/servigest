@@ -137,6 +137,81 @@
         </div>
 
         <!-- 4. ESTADO DE LICENCIA Y SUSCRIPCIÓN (Solo Lectura Informativo) -->
+        <!-- 4. INTEGRACIÓN Y NOTIFICACIONES AUTOMÁTICAS DE WHATSAPP -->
+        <div class="card" x-data="{ autoWhatsapp: {{ $taller->whatsapp_auto_notify_enabled ? 'true' : 'false' }}, provider: '{{ $taller->whatsapp_api_provider ?: 'webhook_personalizado' }}' }">
+            <div class="card-header">
+                <div>
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-brands fa-whatsapp" style="color: #10b981; font-size: 20px;"></i>
+                        <span>4. Notificaciones Automáticas por WhatsApp</span>
+                    </h3>
+                    <p>Envía mensajes automáticos al cliente cuando se crea una orden o cambia a En Proceso, Finalizado o Entregado.</p>
+                </div>
+                <div>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: bold; color: #0f172a;">
+                        <input type="checkbox" name="whatsapp_auto_notify_enabled" value="1" x-model="autoWhatsapp" style="width: 18px; height: 18px; accent-color: #10b981;">
+                        <span>Activar Envío Automático</span>
+                    </label>
+                </div>
+            </div>
+
+            <div x-show="autoWhatsapp" x-transition style="margin-top: 16px;">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Proveedor / Método de Envío</label>
+                        <select name="whatsapp_api_provider" x-model="provider" class="form-input-text">
+                            <option value="webhook_personalizado">Webhook Personalizado (Make / n8n / Zapier / Evolution API)</option>
+                            <option value="whatsapp_cloud_api">WhatsApp Cloud API Oficial (Meta / Facebook)</option>
+                            <option value="ultramsg">UltraMsg API / ChatAPI</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" x-show="provider === 'webhook_personalizado'">
+                        <label class="form-label">URL del Webhook (POST)</label>
+                        <input type="url" name="whatsapp_webhook_url" value="{{ old('whatsapp_webhook_url', $taller->whatsapp_webhook_url) }}" class="form-input-text" placeholder="https://tu-webhook-n8n-o-make.com/webhook/servigest">
+                    </div>
+
+                    <div class="form-group" x-show="provider !== 'webhook_personalizado'">
+                        <label class="form-label">Phone Number ID / Instance ID</label>
+                        <input type="text" name="whatsapp_phone_number_id" value="{{ old('whatsapp_phone_number_id', $taller->whatsapp_phone_number_id) }}" class="form-input-text" placeholder="Ej. 109876543210987 o instance12345">
+                    </div>
+
+                    <div class="form-group form-group-full" x-show="provider !== 'webhook_personalizado'">
+                        <label class="form-label">API Token / Bearer Token</label>
+                        <input type="password" name="whatsapp_api_token" value="{{ old('whatsapp_api_token', $taller->whatsapp_api_token) }}" class="form-input-text" placeholder="EAAXxxxx...">
+                    </div>
+                </div>
+
+                <div style="margin-top: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #166534;">
+                    <i class="fa-solid fa-circle-info"></i> <strong>Variables disponibles en las plantillas:</strong> 
+                    <code>{cliente}</code>, <code>{codigo_orden}</code>, <code>{equipo}</code>, <code>{estado}</code>, <code>{total}</code>, <code>{enlace_seguimiento}</code>, <code>{taller}</code>.
+                </div>
+
+                <div class="form-grid-2" style="margin-top: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Plantilla: Al Registrar Orden (Pendiente)</label>
+                        <textarea name="whatsapp_template_creada" rows="2" class="form-input-text" placeholder="Hola {cliente}, su equipo {equipo} ingresó a {taller}. Orden #{codigo_orden}. Seguimiento: {enlace_seguimiento}">{{ old('whatsapp_template_creada', $taller->whatsapp_template_creada) }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Plantilla: Al Pasar a En Proceso</label>
+                        <textarea name="whatsapp_template_en_proceso" rows="2" class="form-input-text" placeholder="Hola {cliente}, su equipo {equipo} ya está en revisión técnica. Orden #{codigo_orden}. Detalles: {enlace_seguimiento}">{{ old('whatsapp_template_en_proceso', $taller->whatsapp_template_en_proceso) }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Plantilla: Al Finalizar Reparación (Listo para Entrega)</label>
+                        <textarea name="whatsapp_template_finalizada" rows="2" class="form-input-text" placeholder="¡Buenas noticias {cliente}! Su equipo {equipo} está listo. Total: ${total}. Ver informe: {enlace_seguimiento}">{{ old('whatsapp_template_finalizada', $taller->whatsapp_template_finalizada) }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Plantilla: Al Entregar Equipo (Cierre)</label>
+                        <textarea name="whatsapp_template_entregada" rows="2" class="form-input-text" placeholder="Hola {cliente}, su orden #{codigo_orden} ha sido entregada. Gracias por confiar en {taller}. Comprobante: {enlace_seguimiento}">{{ old('whatsapp_template_entregada', $taller->whatsapp_template_entregada) }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. ESTADO DE LA LICENCIA -->
         <div class="card" style="background: #f8fafc; border-color: var(--border);">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
                 <div>
