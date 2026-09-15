@@ -28,8 +28,20 @@
             --primary: #0284c7;
             --primary-hover: #0369a1;
             --primary-gradient: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
-            --sidebar-bg: #0b1120;
-            --sidebar-hover: #162033;
+            --sidebar-bg: #ffffff;
+            --sidebar-border: #e2e8f0;
+            --sidebar-text: #475569;
+            --sidebar-hover: #f1f5f9;
+            --sidebar-hover-text: #0f172a;
+            --sidebar-logo-text: #0f172a;
+            --sidebar-category: #94a3b8;
+            --sidebar-tenant-bg: #f8fafc;
+            --sidebar-tenant-border: #e2e8f0;
+            --sidebar-tenant-lbl: #64748b;
+            --sidebar-footer-bg: #f8fafc;
+            --sidebar-footer-border: #e2e8f0;
+            --sidebar-user-name: #0f172a;
+            --sidebar-logout-btn: #64748b;
             --bg-page: #f1f5f9;
             --card-bg: #ffffff;
             --topbar-bg: #ffffff;
@@ -66,8 +78,20 @@
 
         /* Variables para TEMA OSCURO (Dark Mode) */
         [data-theme="dark"] {
-            --sidebar-bg: #060913;
-            --sidebar-hover: #0f172a;
+            --sidebar-bg: #070b14;
+            --sidebar-border: #1a2336;
+            --sidebar-text: #94a3b8;
+            --sidebar-hover: #131c2e;
+            --sidebar-hover-text: #ffffff;
+            --sidebar-logo-text: #ffffff;
+            --sidebar-category: #475569;
+            --sidebar-tenant-bg: rgba(255, 255, 255, 0.04);
+            --sidebar-tenant-border: rgba(255, 255, 255, 0.07);
+            --sidebar-tenant-lbl: #94a3b8;
+            --sidebar-footer-bg: rgba(0, 0, 0, 0.35);
+            --sidebar-footer-border: #1a2336;
+            --sidebar-user-name: #ffffff;
+            --sidebar-logout-btn: #94a3b8;
             --bg-page: #0b0f19;
             --card-bg: #111827;
             --topbar-bg: #0f172a;
@@ -105,14 +129,14 @@
         .sidebar {
             width: 260px;
             background: var(--sidebar-bg);
-            color: #ffffff;
+            color: var(--sidebar-text);
             display: flex;
             flex-direction: column;
             position: fixed;
             inset: 0 auto 0 0;
             z-index: 100;
-            border-right: 1px solid rgba(255, 255, 255, 0.06);
-            transition: transform 0.3s ease;
+            border-right: 1px solid var(--sidebar-border);
+            transition: transform 0.3s ease, background-color 0.25s ease, border-color 0.25s ease;
         }
 
         .sidebar-header {
@@ -120,8 +144,9 @@
             padding: 0 24px;
             display: flex;
             align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid var(--sidebar-border);
             gap: 12px;
+            transition: border-color 0.25s ease;
         }
 
         .sidebar-logo-icon {
@@ -135,23 +160,26 @@
             color: #fff;
         }
 
-        .sidebar-logo-text h1 { font-size: 20px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
-        .sidebar-logo-text h1 span { color: #38bdf8; }
+        .sidebar-logo-text h1 { font-size: 20px; font-weight: 900; color: var(--sidebar-logo-text); letter-spacing: -0.5px; transition: color 0.25s ease; }
+        .sidebar-logo-text h1 span { color: #0284c7; }
+        [data-theme="dark"] .sidebar-logo-text h1 span { color: #38bdf8; }
         .sidebar-logo-text span.badge { font-size: 9px; text-transform: uppercase; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
 
         .tenant-box {
             margin: 16px;
             padding: 14px;
-            background: rgba(255, 255, 255, 0.04);
+            background: var(--sidebar-tenant-bg);
             border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--sidebar-tenant-border);
+            transition: all 0.25s ease;
         }
 
-        .tenant-box .lbl { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--text-muted); }
-        .tenant-box .taller-name { font-size: 13px; font-weight: 800; color: #38bdf8; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tenant-box .lbl { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--sidebar-tenant-lbl); }
+        .tenant-box .taller-name { font-size: 13px; font-weight: 800; color: #0284c7; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        [data-theme="dark"] .tenant-box .taller-name { color: #38bdf8; }
 
         .nav-list { flex: 1; padding: 8px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-        .nav-category { font-size: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; color: #475569; padding: 14px 12px 6px; }
+        .nav-category { font-size: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; color: var(--sidebar-category); padding: 14px 12px 6px; }
 
         .nav-item {
             display: flex;
@@ -159,7 +187,7 @@
             gap: 12px;
             padding: 11px 16px;
             border-radius: 12px;
-            color: #94a3b8;
+            color: var(--sidebar-text);
             font-size: 13.5px;
             font-weight: 700;
             text-decoration: none;
@@ -167,22 +195,26 @@
         }
 
         .nav-item i { font-size: 16px; width: 20px; text-align: center; }
-        .nav-item:hover { background: var(--sidebar-hover); color: #ffffff; }
-        .nav-item.active { background: var(--primary); color: #ffffff; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35); }
+        .nav-item:hover { background: var(--sidebar-hover); color: var(--sidebar-hover-text); }
+        .nav-item.active { background: var(--primary); color: #ffffff !important; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35); }
+        .nav-item.active i { color: #ffffff !important; }
 
         .user-footer {
             padding: 16px 20px;
-            background: rgba(0, 0, 0, 0.25);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            background: var(--sidebar-footer-bg);
+            border-top: 1px solid var(--sidebar-footer-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            transition: all 0.25s ease;
         }
 
         .user-info { display: flex; align-items: center; gap: 10px; overflow: hidden; }
         .user-avatar { width: 36px; height: 36px; border-radius: 10px; background: #0369a1; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; shrink-0: 0; }
-        .user-name { font-size: 13px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-name { font-size: 13px; font-weight: 800; color: var(--sidebar-user-name); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .user-role { font-size: 10.5px; color: var(--text-muted); text-transform: capitalize; }
+        .logout-btn { background: none; border: none; color: var(--sidebar-logout-btn); cursor: pointer; padding: 6px; font-size: 16px; transition: color 0.2s; }
+        .logout-btn:hover { color: var(--rose); }
 
         /* Contenedor Principal */
         .main-wrapper {
@@ -542,7 +574,7 @@
             </div>
 
             <!-- Botón cerrar menú en celular -->
-            <button @click="menuAbierto = false" class="mobile-menu-btn" style="border: none; background: transparent; color: #94a3b8; font-size: 20px;">
+            <button @click="menuAbierto = false" class="mobile-menu-btn" style="border: none; background: transparent; color: var(--sidebar-text); font-size: 20px;">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -655,7 +687,7 @@
 
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" title="Cerrar sesión" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 6px; font-size: 16px;">
+                <button type="submit" title="Cerrar sesión" class="logout-btn">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 </button>
             </form>
