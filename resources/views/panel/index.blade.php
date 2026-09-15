@@ -8,7 +8,7 @@
     <!-- Grid de Métricas Principales -->
     <div class="grid-kpi">
         
-        <div class="kpi-card">
+        <a href="{{ route('clientes.index') }}" class="kpi-card" title="Ver listado de Clientes">
             <div class="kpi-icon" style="background: #eff6ff; color: #2563eb;">
                 <i class="fa-solid fa-users"></i>
             </div>
@@ -16,9 +16,9 @@
                 <div class="kpi-title">Clientes</div>
                 <div class="kpi-num">{{ $totalClientes }}</div>
             </div>
-        </div>
+        </a>
 
-        <div class="kpi-card">
+        <a href="{{ route('equipos.index') }}" class="kpi-card" title="Ver listado de Equipos">
             <div class="kpi-icon" style="background: #eef2ff; color: #4f46e5;">
                 <i class="fa-solid fa-laptop-medical"></i>
             </div>
@@ -26,9 +26,9 @@
                 <div class="kpi-title">Equipos</div>
                 <div class="kpi-num">{{ $totalEquipos }}</div>
             </div>
-        </div>
+        </a>
 
-        <div class="kpi-card">
+        <a href="{{ route('ordenes.index', ['estado' => 'pendiente']) }}" class="kpi-card" title="Filtrar Órdenes Pendientes">
             <div class="kpi-icon" style="background: #fffbeb; color: #d97706;">
                 <i class="fa-solid fa-clock"></i>
             </div>
@@ -36,9 +36,9 @@
                 <div class="kpi-title">Pendientes</div>
                 <div class="kpi-num" style="color: #d97706;">{{ $ordenesPendientes }}</div>
             </div>
-        </div>
+        </a>
 
-        <div class="kpi-card">
+        <a href="{{ route('ordenes.index', ['estado' => 'en_proceso']) }}" class="kpi-card" title="Filtrar Órdenes En Proceso">
             <div class="kpi-icon" style="background: #f0f9ff; color: #0284c7;">
                 <i class="fa-solid fa-spinner fa-spin"></i>
             </div>
@@ -46,9 +46,9 @@
                 <div class="kpi-title">En Proceso</div>
                 <div class="kpi-num" style="color: #0284c7;">{{ $ordenesEnProceso }}</div>
             </div>
-        </div>
+        </a>
 
-        <div class="kpi-card">
+        <a href="{{ route('ordenes.index', ['estado' => 'finalizado']) }}" class="kpi-card" title="Filtrar Órdenes Finalizadas">
             <div class="kpi-icon" style="background: #ecfdf5; color: #10b981;">
                 <i class="fa-solid fa-circle-check"></i>
             </div>
@@ -56,7 +56,7 @@
                 <div class="kpi-title">Finalizadas</div>
                 <div class="kpi-num" style="color: #10b981;">{{ $ordenesFinalizadas }}</div>
             </div>
-        </div>
+        </a>
 
     </div>
 

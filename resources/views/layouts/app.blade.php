@@ -368,7 +368,25 @@
 
         /* KPI Dashboard */
         .grid-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 28px; }
-        .kpi-card { background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: var(--card-shadow); }
+        .kpi-card { 
+            background: var(--card-bg); 
+            border-radius: 18px; 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            box-shadow: var(--card-shadow); 
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.12), 0 4px 8px -4px rgba(0, 0, 0, 0.06);
+        }
         .kpi-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; shrink-0: 0; }
         .kpi-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
         .kpi-num { font-size: 24px; font-weight: 900; color: var(--text-main); margin-top: 2px; }
