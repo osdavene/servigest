@@ -15,8 +15,17 @@ class TallerController extends Controller
     public function index(Request $request)
     {
         $busqueda = trim((string)$request->input('buscar'));
+        $estadoSuscripcion = $request->input('estado_suscripcion');
+
+        // Métricas de Talleres SaaS
+        $totalTalleres = Taller::count();
+        $talleresActivos = Taller::where('estado_suscripcion', 'activo')->count();
+        $talleresPrueba = Taller::where('estado_suscripcion', 'periodo_prueba')->count();
+        $talleresSuspendidos = Taller::where('estado_suscripcion', 'suspendido')->count();
+        $usuariosEnLinea = Usuario::whereNotNull('current_session_id')->where('esta_activo', true)->count();
 
         $talleres = Taller::withCount(['usuarios', 'clientes', 'equipos', 'ordenesTrabajo'])
+            ->when($estadoSuscripcion, fn($query, $est) => $query->where('estado_suscripcion', $est))
             ->when($busqueda, function ($query, $buscar) {
                 $query->where('nombre_comercial', 'like', "%{$buscar}%")
                       ->orWhere('identificacion_fiscal', 'like', "%{$buscar}%")
@@ -29,7 +38,16 @@ class TallerController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('superadmin.talleres.index', compact('talleres', 'busqueda'));
+        return view('superadmin.talleres.index', compact(
+            'talleres',
+            'busqueda',
+            'estadoSuscripcion',
+            'totalTalleres',
+            'talleresActivos',
+            'talleresPrueba',
+            'talleresSuspendidos',
+            'usuariosEnLinea'
+        ));
     }
 
     public function create()

@@ -13,6 +13,7 @@ use App\Http\Controllers\ReportePdfController;
 use App\Http\Controllers\RespaldoTallerController;
 use App\Http\Controllers\SuperAdmin\PlanLicenciaController as SuperAdminPlanLicenciaController;
 use App\Http\Controllers\SuperAdmin\RespaldoController as SuperAdminRespaldoController;
+use App\Http\Controllers\SuperAdmin\SeguridadController as SuperAdminSeguridadController;
 use App\Http\Controllers\SuperAdmin\TallerController as SuperAdminTallerController;
 use App\Http\Controllers\UsuarioTallerController;
 use Illuminate\Support\Facades\Route;
@@ -113,6 +114,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('respaldos/global', [SuperAdminRespaldoController::class, 'descargarGlobal'])->name('respaldos.global');
         Route::get('respaldos/taller/{taller}', [SuperAdminRespaldoController::class, 'descargarPorTaller'])->name('respaldos.taller');
         Route::post('respaldos/restaurar', [SuperAdminRespaldoController::class, 'restaurarEmpresa'])->name('respaldos.restaurar');
+
+        // Bitácora Global de Accesos y Seguridad
+        Route::get('seguridad', [SuperAdminSeguridadController::class, 'index'])->name('seguridad.index');
+        Route::post('seguridad/desconectar/{usuario}', [SuperAdminSeguridadController::class, 'desconectar'])->name('seguridad.desconectar');
     });
 
 });

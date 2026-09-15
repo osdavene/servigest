@@ -718,9 +718,14 @@
                     <span>Planes & Licencias</span>
                 </a>
 
-                <div class="nav-category" style="color: #fbbf24;">Seguridad & Datos</div>
+                <div class="nav-category" style="color: #fbbf24;">Seguridad & Accesos</div>
 
-                <a href="{{ route('superadmin.respaldos.index') }}" class="nav-item {{ request()->routeIs('superadmin.respaldos.*') ? 'active' : '' }}" style="{{ request()->routeIs('superadmin.respaldos.*') ? 'background: linear-gradient(135deg, #d97706, #b45309);' : '' }}">
+                <a href="{{ route('superadmin.seguridad.index') }}" class="nav-item {{ request()->routeIs('superadmin.seguridad.*') ? 'active' : '' }}" style="{{ request()->routeIs('superadmin.seguridad.*') ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff;' : '' }}">
+                    <i class="fa-solid fa-shield-halved" style="color: #fbbf24;"></i>
+                    <span>Auditoría & Accesos</span>
+                </a>
+
+                <a href="{{ route('superadmin.respaldos.index') }}" class="nav-item {{ request()->routeIs('superadmin.respaldos.*') ? 'active' : '' }}" style="{{ request()->routeIs('superadmin.respaldos.*') ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff;' : '' }}">
                     <i class="fa-solid fa-database" style="color: #fbbf24;"></i>
                     <span>Copias de Seguridad</span>
                 </a>
