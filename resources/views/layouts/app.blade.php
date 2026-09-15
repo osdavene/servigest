@@ -129,7 +129,40 @@
             --theme-toggle-color: #36AFED;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+        }
+
+        /* Scrollbars Globales Ultrafinos y Modernos */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.25);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.45);
+        }
+
+        ::-webkit-scrollbar-button {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
         body { background-color: var(--bg-page); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
         [x-cloak] { display: none !important; }
 
@@ -186,7 +219,34 @@
         .tenant-box .taller-name { font-size: 13px; font-weight: 800; color: #0284c7; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         [data-theme="dark"] .tenant-box .taller-name { color: #38bdf8; }
 
-        .nav-list { flex: 1; padding: 8px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .nav-list { 
+            flex: 1; 
+            padding: 8px 14px; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+        }
+
+        .nav-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .nav-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .nav-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+        }
+
+        .nav-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
         .nav-category { font-size: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; color: var(--sidebar-category); padding: 14px 12px 6px; }
 
         .nav-item {
