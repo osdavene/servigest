@@ -47,7 +47,7 @@
                 </thead>
                 <tbody>
                     @forelse($clientes as $cliente)
-                        <tr>
+                        <tr data-href="{{ route('clientes.show', $cliente) }}" class="clickable-row" title="Clic para ver detalles y equipos de {{ $cliente->nombre_completo }}">
                             <td>
                                 <a href="{{ route('clientes.show', $cliente) }}" style="font-weight: 800; color: #0284c7; text-decoration: none; font-size: 14px; display: block;">
                                     {{ $cliente->nombre_completo }}

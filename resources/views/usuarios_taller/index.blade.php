@@ -61,7 +61,7 @@
                 </thead>
                 <tbody>
                     @forelse($usuarios as $colaborador)
-                        <tr>
+                        <tr data-href="{{ route('personal.edit', $colaborador) }}" class="clickable-row" title="Clic para ver / editar detalles de {{ $colaborador->nombre_completo }}">
                             <td>
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <div style="width: 36px; height: 36px; border-radius: 10px; background: {{ $colaborador->esAdminTaller() ? '#e0f2fe' : '#ecfdf5' }}; color: {{ $colaborador->esAdminTaller() ? '#0369a1' : '#065f46' }}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;">

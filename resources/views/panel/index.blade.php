@@ -139,7 +139,7 @@
                 </thead>
                 <tbody>
                     @forelse($ultimasOrdenes as $orden)
-                        <tr>
+                        <tr data-href="{{ route('ordenes.show', $orden) }}" class="clickable-row" title="Clic para ver detalles de la orden {{ $orden->codigo_orden }}">
                             <td>
                                 <strong style="color: #0284c7; font-size: 13.5px; display: block;">{{ $orden->codigo_orden }}</strong>
                                 <span style="font-size: 11px; color: #94a3b8;">{{ $orden->fecha_ingreso?->format('d/m/Y h:i A') }}</span>

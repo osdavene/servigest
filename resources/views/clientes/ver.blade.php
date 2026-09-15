@@ -84,7 +84,7 @@
 
             <div style="display: flex; flex-direction: column; gap: 12px;">
                 @forelse($cliente->equipos as $eq)
-                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; align-items: center; justify-content: space-between; background: #ffffff;">
+                    <div onclick="window.location='{{ route('equipos.show', $eq) }}'" style="border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'" title="Clic para ver hoja de vida de {{ $eq->marca }} {{ $eq->modelo }}">
                         <div>
                             <span class="badge" style="background: #f5f3ff; color: #7c3aed; font-size: 9px; margin-bottom: 4px;">
                                 {{ $eq->categoria?->nombre ?? 'Equipo' }}
@@ -124,7 +124,7 @@
 
             <div style="display: flex; flex-direction: column; gap: 12px;">
                 @forelse($cliente->ordenesTrabajo as $ot)
-                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; align-items: center; justify-content: space-between; background: #ffffff;">
+                    <div onclick="window.location='{{ route('ordenes.show', $ot) }}'" style="border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'" title="Clic para ver detalles de la orden {{ $ot->codigo_orden }}">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <strong style="color: #0284c7; font-size: 14px;">{{ $ot->codigo_orden }}</strong>

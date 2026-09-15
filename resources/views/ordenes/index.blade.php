@@ -67,7 +67,7 @@
                 </thead>
                 <tbody>
                     @forelse($ordenes as $orden)
-                        <tr>
+                        <tr data-href="{{ route('ordenes.show', $orden) }}" class="clickable-row" title="Clic para ver detalles de la orden {{ $orden->codigo_orden }}">
                             <td>
                                 <a href="{{ route('ordenes.show', $orden) }}" style="text-decoration: none; color: inherit; display: block;">
                                     <strong style="color: #0284c7; font-size: 14px;">{{ $orden->codigo_orden }}</strong>

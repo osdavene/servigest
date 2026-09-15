@@ -62,7 +62,7 @@
                 </thead>
                 <tbody>
                     @forelse($equipos as $equipo)
-                        <tr>
+                        <tr data-href="{{ route('equipos.show', $equipo) }}" class="clickable-row" title="Clic para ver hoja de vida e historial de {{ $equipo->marca }} {{ $equipo->modelo }}">
                             <td>
                                 <a href="{{ route('equipos.show', $equipo) }}" style="text-decoration: none; color: inherit; display: block;">
                                     <strong style="color: #0284c7; font-size: 14px;">{{ $equipo->marca }} {{ $equipo->modelo }}</strong>

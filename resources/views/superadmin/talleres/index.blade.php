@@ -48,7 +48,7 @@
                 </thead>
                 <tbody>
                     @forelse($talleres as $taller)
-                        <tr>
+                        <tr data-href="{{ route('superadmin.talleres.show', $taller) }}" class="clickable-row" title="Clic para ver detalles de {{ $taller->nombre_comercial }}">
                             <td>
                                 <strong style="color: #0f172a; font-size: 14px; display: block;">{{ $taller->nombre_comercial }}</strong>
                                 <span style="font-size: 11px; color: #94a3b8;">{{ $taller->identificacion_fiscal ? 'NIT: ' . $taller->identificacion_fiscal : 'Sin NIT' }} • {{ $taller->ciudad }}</span>

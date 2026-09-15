@@ -497,6 +497,18 @@
         .data-table tr:last-child td { border-bottom: none; }
         .data-table tr:hover td { background: var(--table-hover-bg); }
 
+        /* Filas clickables en tablas */
+        .data-table tbody tr.clickable-row,
+        .data-table tbody tr[data-href] {
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .data-table tbody tr.clickable-row:hover,
+        .data-table tbody tr[data-href]:hover {
+            background-color: var(--table-hover-bg) !important;
+        }
+
         .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid transparent; }
         .badge-active, .badge-finished { background: var(--emerald-bg); color: var(--emerald); border-color: var(--emerald-border); }
         .badge-pending, .badge-trial { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border); }
@@ -837,5 +849,20 @@
         </main>
     </div>
 
+    <!-- Script Global para Filas Clickables en Listados -->
+    <script>
+        document.addEventListener('click', function(e) {
+            const interactive = e.target.closest('a, button, input, select, textarea, form, label, [data-no-click]');
+            if (interactive) return;
+
+            const row = e.target.closest('tr[data-href], tr.clickable-row');
+            if (row) {
+                const href = row.getAttribute('data-href');
+                if (href) {
+                    window.location.href = href;
+                }
+            }
+        });
+    </script>
 </body>
 </html>

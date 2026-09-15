@@ -133,7 +133,7 @@
 
             <div style="display: flex; flex-direction: column; gap: 18px;">
                 @forelse($equipo->ordenesTrabajo as $index => $ot)
-                    <div style="border: 1.5px solid var(--border); border-radius: 16px; padding: 18px; background: #ffffff; transition: all 0.2s; position: relative;">
+                    <div onclick="window.location='{{ route('ordenes.show', $ot) }}'" style="border: 1.5px solid var(--border); border-radius: 16px; padding: 18px; background: var(--card-bg); cursor: pointer; transition: all 0.2s; position: relative;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'" title="Clic para ver detalles de la orden {{ $ot->codigo_orden }}">
                         
                         <!-- Encabezado de la Orden en el Timeline -->
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
