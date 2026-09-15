@@ -2,11 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Usuario;
+use App\Services\AuditoriaAccesoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AutenticacionController extends Controller
 {
+    public function __construct(
+        protected AuditoriaAccesoService $auditoriaService
+    ) {}
+
     /**
      * Muestra el formulario de acceso estándar para Talleres y Técnicos.
      */
@@ -34,23 +41,53 @@ class AutenticacionController extends Controller
         ]);
 
         $recordar = $request->boolean('recordar');
+        $forzarCierre = $request->boolean('forzar_cierre');
 
-        if (Auth::attempt(['email' => $credenciales['email'], 'password' => $credenciales['password'], 'esta_activo' => true], $recordar)) {
-            $request->session()->regenerate();
+        $usuario = Usuario::where('email', $credenciales['email'])->first();
 
-            $usuario = Auth::user();
+        // 1. Validar si el usuario existe, su contraseña es correcta y está activo
+        if (!$usuario || !Hash::check($credenciales['password'], $usuario->password) || !$usuario->esta_activo) {
+            $this->auditoriaService->registrarLoginFallido($credenciales['email'], $request, 'Credenciales incorrectas o cuenta inactiva');
 
-            // Si es SuperAdmin que ingresó por el login general, redirige a su panel maestro
-            if ($usuario->esSuperAdmin()) {
-                return redirect()->intended(route('superadmin.talleres.index'));
-            }
-
-            return redirect()->intended(route('panel.index'));
+            return back()->withErrors([
+                'email' => 'Las credenciales proporcionadas no coinciden o la cuenta está inactiva.',
+            ])->onlyInput('email');
         }
 
-        return back()->withErrors([
-            'email' => 'Las credenciales proporcionadas no coinciden o la cuenta está inactiva.',
-        ])->onlyInput('email');
+        // 2. Si el usuario ya tiene una sesión activa y aún no ha confirmado forzar el cierre
+        if ($usuario->estaEnLinea() && !$forzarCierre) {
+            $ultimoAcceso = $this->auditoriaService->obtenerUltimoAccesoActivo($usuario);
+
+            return back()->with('sesion_activa_detectada', [
+                'email' => $usuario->email,
+                'password_temp' => $credenciales['password'],
+                'dispositivo' => $ultimoAcceso?->dispositivo ?? 'Otro dispositivo',
+                'navegador' => $ultimoAcceso?->navegador ?? 'Navegador Web',
+                'ubicacion' => $ultimoAcceso?->ciudad ? ($ultimoAcceso->ciudad . ', ' . $ultimoAcceso->pais) : 'Ubicación remota',
+                'ip' => $ultimoAcceso?->ip_address ?? $usuario->ultimo_login_ip ?? 'IP Desconocida',
+                'fecha' => $ultimoAcceso?->fecha_ingreso?->format('d/m/Y h:i A') ?? $usuario->ultimo_login_at?->format('d/m/Y h:i A') ?? 'Recientemente',
+            ])->onlyInput('email');
+        }
+
+        // 3. Autenticar e invalidar sesión previa
+        Auth::login($usuario, $recordar);
+        $request->session()->regenerate();
+        $sessionId = $request->session()->getId();
+
+        $usuario->update([
+            'current_session_id' => $sessionId,
+            'ultimo_login_at' => now(),
+            'ultimo_login_ip' => $request->ip(),
+        ]);
+
+        $this->auditoriaService->registrarLoginExitoso($usuario, $request, $sessionId);
+
+        // Si es SuperAdmin que ingresó por el login general, redirige a su panel maestro
+        if ($usuario->esSuperAdmin()) {
+            return redirect()->intended(route('superadmin.talleres.index'));
+        }
+
+        return redirect()->intended(route('panel.index'));
     }
 
     /**
@@ -75,14 +112,44 @@ class AutenticacionController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (Auth::attempt(['email' => $credenciales['email'], 'password' => $credenciales['password'], 'rol' => 'super_administrador', 'esta_activo' => true], $request->boolean('recordar'))) {
-            $request->session()->regenerate();
-            return redirect()->intended(route('superadmin.talleres.index'));
+        $forzarCierre = $request->boolean('forzar_cierre');
+        $usuario = Usuario::where('email', $credenciales['email'])->where('rol', 'super_administrador')->first();
+
+        if (!$usuario || !Hash::check($credenciales['password'], $usuario->password) || !$usuario->esta_activo) {
+            $this->auditoriaService->registrarLoginFallido($credenciales['email'], $request, 'Credenciales de SuperAdmin inválidas');
+
+            return back()->withErrors([
+                'email' => 'Acceso denegado. Credenciales de Super Administrador inválidas.',
+            ])->onlyInput('email');
         }
 
-        return back()->withErrors([
-            'email' => 'Acceso denegado. Credenciales de Super Administrador inválidas.',
-        ])->onlyInput('email');
+        if ($usuario->estaEnLinea() && !$forzarCierre) {
+            $ultimoAcceso = $this->auditoriaService->obtenerUltimoAccesoActivo($usuario);
+
+            return back()->with('sesion_activa_detectada', [
+                'email' => $usuario->email,
+                'password_temp' => $credenciales['password'],
+                'dispositivo' => $ultimoAcceso?->dispositivo ?? 'Otro dispositivo',
+                'navegador' => $ultimoAcceso?->navegador ?? 'Navegador Web',
+                'ubicacion' => $ultimoAcceso?->ciudad ? ($ultimoAcceso->ciudad . ', ' . $ultimoAcceso->pais) : 'Ubicación remota',
+                'ip' => $ultimoAcceso?->ip_address ?? $usuario->ultimo_login_ip ?? 'IP Desconocida',
+                'fecha' => $ultimoAcceso?->fecha_ingreso?->format('d/m/Y h:i A') ?? $usuario->ultimo_login_at?->format('d/m/Y h:i A') ?? 'Recientemente',
+            ])->onlyInput('email');
+        }
+
+        Auth::login($usuario, $request->boolean('recordar'));
+        $request->session()->regenerate();
+        $sessionId = $request->session()->getId();
+
+        $usuario->update([
+            'current_session_id' => $sessionId,
+            'ultimo_login_at' => now(),
+            'ultimo_login_ip' => $request->ip(),
+        ]);
+
+        $this->auditoriaService->registrarLoginExitoso($usuario, $request, $sessionId);
+
+        return redirect()->intended(route('superadmin.talleres.index'));
     }
 
     /**
@@ -90,11 +157,31 @@ class AutenticacionController extends Controller
      */
     public function cerrarSesion(Request $request)
     {
-        $esSuperAdmin = Auth::check() && Auth::user()->esSuperAdmin();
+        $usuario = Auth::user();
+        $sessionId = $request->session()->getId();
+        $esSuperAdmin = $usuario && $usuario->esSuperAdmin();
+        $motivo = $request->input('motivo');
+
+        if ($usuario) {
+            $estadoCierre = ($motivo === 'inactividad') ? 'inactividad' : 'logout';
+            $this->auditoriaService->registrarCierreSesion($usuario, $sessionId, $estadoCierre);
+
+            $usuario->update([
+                'current_session_id' => null,
+            ]);
+        }
 
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($motivo === 'inactividad') {
+            $mensaje = 'Tu sesión se cerró automáticamente por 15 minutos de inactividad por motivos de seguridad.';
+            if ($esSuperAdmin) {
+                return redirect()->route('superadmin.login')->with('error', $mensaje);
+            }
+            return redirect()->route('login')->with('error', $mensaje);
+        }
 
         if ($esSuperAdmin) {
             return redirect()->route('superadmin.login')->with('exito', 'Sesión de Super Administrador finalizada.');

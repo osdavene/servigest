@@ -864,5 +864,84 @@
             }
         });
     </script>
+
+    <!-- Monitor de Seguridad: Cierre Automático tras 15 Minutos de Inactividad -->
+    @auth
+    <script>
+        (function() {
+            const TIEMPO_INACTIVIDAD_MS = 15 * 60 * 1000; // 15 minutos de inactividad
+            const STORAGE_KEY = 'servigest_ultima_actividad';
+            let temporizadorInactividad;
+
+            function registrarActividad() {
+                const ahora = Date.now();
+                localStorage.setItem(STORAGE_KEY, ahora.toString());
+                reiniciarTemporizador();
+            }
+
+            function verificarInactividad() {
+                const ultimaActividad = parseInt(localStorage.getItem(STORAGE_KEY) || Date.now(), 10);
+                const transcurrido = Date.now() - ultimaActividad;
+
+                if (transcurrido >= TIEMPO_INACTIVIDAD_MS) {
+                    cerrarSesionPorInactividad();
+                } else {
+                    const restante = TIEMPO_INACTIVIDAD_MS - transcurrido;
+                    clearTimeout(temporizadorInactividad);
+                    temporizadorInactividad = setTimeout(verificarInactividad, restante);
+                }
+            }
+
+            function reiniciarTemporizador() {
+                clearTimeout(temporizadorInactividad);
+                temporizadorInactividad = setTimeout(verificarInactividad, TIEMPO_INACTIVIDAD_MS);
+            }
+
+            function cerrarSesionPorInactividad() {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route('logout') }}';
+                
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = '{{ csrf_token() }}';
+                form.appendChild(csrfInput);
+
+                const motivoInput = document.createElement('input');
+                motivoInput.type = 'hidden';
+                motivoInput.name = 'motivo';
+                motivoInput.value = 'inactividad';
+                form.appendChild(motivoInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+
+            const eventos = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+            let throttleTimeout;
+            function manejadorActividad() {
+                if (!throttleTimeout) {
+                    throttleTimeout = setTimeout(function() {
+                        registrarActividad();
+                        throttleTimeout = null;
+                    }, 1000);
+                }
+            }
+
+            eventos.forEach(evento => {
+                window.addEventListener(evento, manejadorActividad, { passive: true });
+            });
+
+            window.addEventListener('storage', function(e) {
+                if (e.key === STORAGE_KEY) {
+                    verificarInactividad();
+                }
+            });
+
+            registrarActividad();
+        })();
+    </script>
+    @endauth
 </body>
 </html>

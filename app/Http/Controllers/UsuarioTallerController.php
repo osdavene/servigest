@@ -2,19 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RegistroAcceso;
 use App\Models\Usuario;
+use App\Services\AuditoriaAccesoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class UsuarioTallerController extends Controller
 {
+    public function __construct(
+        protected AuditoriaAccesoService $auditoriaService
+    ) {}
+
     /**
-     * Lista todos los técnicos y administradores pertenecientes al taller actual con búsqueda reactiva.
+     * Lista todos los técnicos y administradores pertenecientes al taller actual con búsqueda reactiva y bitácora de accesos.
      */
     public function index(Request $request)
     {
         $taller = auth()->user()->taller;
+        $tab = $request->query('tab', 'equipo');
         $busqueda = trim((string)$request->input('buscar'));
 
         $usuarios = Usuario::where('taller_id', $taller->id)
@@ -31,11 +38,26 @@ class UsuarioTallerController extends Controller
             ->orderBy('nombre')
             ->get();
 
+        $registrosAcceso = RegistroAcceso::where('taller_id', $taller->id)
+            ->with('usuario')
+            ->latest('fecha_ingreso')
+            ->paginate(20)
+            ->withQueryString();
+
         $limiteUsuarios = $taller->planLicencia?->limite_usuarios;
         $totalUsuarios = Usuario::where('taller_id', $taller->id)->where('esta_activo', true)->count();
         $limiteAlcanzado = $limiteUsuarios && $totalUsuarios >= $limiteUsuarios;
 
-        return view('usuarios_taller.index', compact('usuarios', 'taller', 'limiteUsuarios', 'totalUsuarios', 'limiteAlcanzado', 'busqueda'));
+        return view('usuarios_taller.index', compact(
+            'usuarios',
+            'taller',
+            'limiteUsuarios',
+            'totalUsuarios',
+            'limiteAlcanzado',
+            'busqueda',
+            'tab',
+            'registrosAcceso'
+        ));
     }
 
     /**
@@ -175,5 +197,23 @@ class UsuarioTallerController extends Controller
 
         return redirect()->route('personal.index')
             ->with('exito', 'Usuario desactivado correctamente.');
+    }
+
+    /**
+     * Fuerza el cierre de la sesión activa de un usuario del taller.
+     */
+    public function desconectarSesion(Usuario $usuario)
+    {
+        if ((int)$usuario->taller_id !== (int)auth()->user()->taller_id && !auth()->user()->esSuperAdmin()) {
+            abort(403, 'No tienes permiso para desconectar este usuario.');
+        }
+
+        if ($usuario->id === auth()->id()) {
+            return back()->with('error', 'No puedes forzar la desconexión de tu propia sesión activa.');
+        }
+
+        $this->auditoriaService->forzarCierreSesion($usuario);
+
+        return back()->with('exito', "Se ha cerrado la sesión remota de {$usuario->nombre_completo} correctamente.");
     }
 }

@@ -56,10 +56,50 @@
             <p>Portal exclusivo de dirección general de ServiGest SaaS.</p>
         </div>
 
+        @if(session('sesion_activa_detectada'))
+            <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #fde68a; border-radius: 16px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: #d97706; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <strong style="font-size: 14.5px; color: #78350f; display: block; margin-bottom: 4px;">Sesión de SuperAdmin Activa Detectada</strong>
+                        <p style="font-size: 12.5px; color: #92400e; line-height: 1.45; margin-bottom: 8px;">
+                            Esta cuenta maestra ya está activa en <strong>{{ session('sesion_activa_detectada.dispositivo') }}</strong> ({{ session('sesion_activa_detectada.ubicacion') }} • IP {{ session('sesion_activa_detectada.ip') }}).
+                        </p>
+                        <p style="font-size: 12px; font-weight: 800; color: #b45309; margin-bottom: 12px;">
+                            ¿Deseas cerrar la otra sesión de Super Administrador y continuar aquí?
+                        </p>
+
+                        <form method="POST" action="{{ route('superadmin.login.post') }}" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            @csrf
+                            <input type="hidden" name="email" value="{{ session('sesion_activa_detectada.email') }}">
+                            <input type="hidden" name="password" value="{{ session('sesion_activa_detectada.password_temp') }}">
+                            <input type="hidden" name="forzar_cierre" value="1">
+                            <button type="submit" class="btn-submit" style="padding: 9px 16px; font-size: 12.5px; width: auto; background: linear-gradient(135deg, #d97706, #b45309);">
+                                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                                <span>Sí, cerrar otra sesión e ingresar</span>
+                            </button>
+                            <a href="{{ route('superadmin.login') }}" style="display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; color: #475569; text-decoration: none; font-size: 12.5px; font-weight: 700;">
+                                Cancelar
+                            </a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         @if(session('error'))
             <div class="alert-box alert-error">
                 <i class="fa-solid fa-circle-exclamation"></i>
                 <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
+        @if(session('exito'))
+            <div class="alert-box" style="background: #ecfdf5; border: 1.5px solid #a7f3d0; color: #065f46; margin-bottom: 20px; padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 16px;"></i>
+                <span>{{ session('exito') }}</span>
             </div>
         @endif
 

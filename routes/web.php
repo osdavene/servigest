@@ -89,6 +89,7 @@ Route::middleware(['auth'])->group(function () {
 
             // Gestión de Técnicos y Personal del Taller
             Route::resource('personal', UsuarioTallerController::class)->parameters(['personal' => 'usuario']);
+            Route::post('personal/{usuario}/desconectar', [UsuarioTallerController::class, 'desconectarSesion'])->name('personal.desconectar');
 
             // Configuración y Perfil del Taller
             Route::get('/configuracion', [ConfiguracionTallerController::class, 'index'])->name('configuracion.index');

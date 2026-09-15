@@ -24,6 +24,9 @@ class Usuario extends Authenticatable
         'password',
         'rol',
         'esta_activo',
+        'current_session_id',
+        'ultimo_login_at',
+        'ultimo_login_ip',
     ];
 
     protected $hidden = [
@@ -33,9 +36,25 @@ class Usuario extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'ultimo_login_at' => 'datetime',
         'password' => 'hashed',
         'esta_activo' => 'boolean',
     ];
+
+    public function registrosAcceso(): HasMany
+    {
+        return $this->hasMany(RegistroAcceso::class, 'usuario_id');
+    }
+
+    public function estaEnLinea(): bool
+    {
+        if (empty($this->current_session_id) || empty($this->ultimo_login_at)) {
+            return false;
+        }
+
+        // Si su última actividad o login fue dentro de los últimos 15 minutos
+        return $this->ultimo_login_at->diffInMinutes(now()) <= 15;
+    }
 
     public function taller(): BelongsTo
     {
