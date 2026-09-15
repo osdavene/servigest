@@ -15,6 +15,7 @@ use App\Http\Controllers\SuperAdmin\PlanLicenciaController as SuperAdminPlanLice
 use App\Http\Controllers\SuperAdmin\RespaldoController as SuperAdminRespaldoController;
 use App\Http\Controllers\SuperAdmin\SeguridadController as SuperAdminSeguridadController;
 use App\Http\Controllers\SuperAdmin\TallerController as SuperAdminTallerController;
+use App\Http\Controllers\SuperAdmin\UsuarioSuperAdminController as SuperAdminUsuarioController;
 use App\Http\Controllers\UsuarioTallerController;
 use Illuminate\Support\Facades\Route;
 
@@ -118,6 +119,9 @@ Route::middleware(['auth'])->group(function () {
         // Bitácora Global de Accesos y Seguridad
         Route::get('seguridad', [SuperAdminSeguridadController::class, 'index'])->name('seguridad.index');
         Route::post('seguridad/desconectar/{usuario}', [SuperAdminSeguridadController::class, 'desconectar'])->name('seguridad.desconectar');
+
+        // Gestión de Cuentas de Super Administradores
+        Route::resource('usuarios', SuperAdminUsuarioController::class)->parameters(['usuarios' => 'usuario']);
     });
 
 });

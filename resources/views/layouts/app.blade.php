@@ -701,7 +701,7 @@
             @if(auth()->check() && auth()->user()->esSuperAdmin())
                 <div class="nav-category" style="color: #fbbf24;">Consola Central SaaS</div>
 
-                <a href="{{ route('superadmin.talleres.index') }}" class="nav-item {{ request()->routeIs('superadmin.talleres.*') ? 'active' : '' }}" style="{{ request()->routeIs('superadmin.talleres.*') ? 'background: linear-gradient(135deg, #d97706, #b45309);' : '' }}">
+                <a href="{{ route('superadmin.talleres.index') }}" class="nav-item {{ request()->routeIs('superadmin.talleres.*') ? 'active' : '' }}" style="{{ request()->routeIs('superadmin.talleres.*') ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff;' : '' }}">
                     <i class="fa-solid fa-building-shield" style="color: #fbbf24;"></i>
                     <span>Talleres Registrados</span>
                 </a>
@@ -709,6 +709,11 @@
                 <a href="{{ route('superadmin.talleres.create') }}" class="nav-item" style="color: #fde68a;">
                     <i class="fa-solid fa-plus-circle"></i>
                     <span>Alta de Empresa</span>
+                </a>
+
+                <a href="{{ route('superadmin.usuarios.index') }}" class="nav-item {{ request()->routeIs('superadmin.usuarios.*') ? 'active' : '' }}" style="{{ request()->routeIs('superadmin.usuarios.*') ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff;' : '' }}">
+                    <i class="fa-solid fa-user-shield" style="color: #fbbf24;"></i>
+                    <span>Super Administradores</span>
                 </a>
 
                 <div class="nav-category" style="color: #fbbf24;">Planes Comerciales</div>
