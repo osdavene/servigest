@@ -92,6 +92,24 @@ class Taller extends Model
         return !$this->estaSuscripcionActiva();
     }
 
+    public function getDiasRestantesLicenciaAttribute(): int
+    {
+        if (!$this->fecha_vencimiento_suscripcion) {
+            return 0;
+        }
+
+        if ($this->fecha_vencimiento_suscripcion->isPast() && !$this->fecha_vencimiento_suscripcion->isToday()) {
+            return 0;
+        }
+
+        return max(0, (int) now()->startOfDay()->diffInDays($this->fecha_vencimiento_suscripcion->startOfDay(), false));
+    }
+
+    public function getFechaFinSuscripcionAttribute()
+    {
+        return $this->fecha_vencimiento_suscripcion;
+    }
+
     public function getUrlLogoAttribute(): ?string
     {
         if (!$this->logo_ruta) {
