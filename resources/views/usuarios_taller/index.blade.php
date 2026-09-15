@@ -317,8 +317,21 @@
                                     @endswitch
                                 </td>
                                 <td>
+                                    @php
+                                        $duracionTexto = 'En curso / Activa';
+                                        if ($registro->fecha_cierre && $registro->fecha_ingreso) {
+                                            $mins = $registro->fecha_ingreso->diffInMinutes($registro->fecha_cierre);
+                                            if ($mins < 1) {
+                                                $duracionTexto = '< 1 min';
+                                            } elseif ($mins < 60) {
+                                                $duracionTexto = "{$mins} min";
+                                            } else {
+                                                $duracionTexto = intdiv($mins, 60) . 'h ' . ($mins % 60) . 'm';
+                                            }
+                                        }
+                                    @endphp
                                     <span style="font-size: 12px; font-weight: 700; color: var(--text-main, #334155);">
-                                        {{ $registro->obtenerDuracionFormateada() }}
+                                        {{ $duracionTexto }}
                                     </span>
                                 </td>
                                 <td>
