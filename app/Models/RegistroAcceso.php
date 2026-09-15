@@ -48,8 +48,16 @@ class RegistroAcceso extends Model
      */
     public function getDuracionFormateadaAttribute(): ?string
     {
+        return $this->obtenerDuracionFormateada();
+    }
+
+    /**
+     * Retorna la duración formateada en texto legible.
+     */
+    public function obtenerDuracionFormateada(): string
+    {
         if (!$this->fecha_cierre || !$this->fecha_ingreso) {
-            return null;
+            return 'En curso / Activa';
         }
 
         $minutos = $this->fecha_ingreso->diffInMinutes($this->fecha_cierre);

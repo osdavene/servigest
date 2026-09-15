@@ -229,14 +229,14 @@
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0;">
-                                            {{ strtoupper(substr($registro->usuario?->nombre ?? $registro->email_intentado, 0, 1)) }}
+                                            {{ strtoupper(substr($registro->usuario?->nombre ?? $registro->email_ingresado, 0, 1)) }}
                                         </div>
                                         <div>
                                             <strong style="color: var(--text-main, #0f172a); font-size: 13.5px; display: block;">
                                                 {{ $registro->usuario?->nombre_completo ?? 'Intento Desconocido' }}
                                             </strong>
                                             <span style="font-size: 11.5px; color: var(--text-muted, #64748b); font-family: monospace;">
-                                                {{ $registro->email_intentado }}
+                                                {{ $registro->email_ingresado }}
                                             </span>
                                         </div>
                                     </div>
@@ -323,7 +323,7 @@
                                 </td>
                                 <td>
                                     <div style="font-size: 12px; color: var(--text-muted, #64748b);">
-                                        {{ $registro->fecha_salida ? $registro->fecha_salida->format('d/m/Y h:i A') : 'En curso / Sin registrar' }}
+                                        {{ $registro->fecha_cierre ? $registro->fecha_cierre->format('d/m/Y h:i A') : 'En curso / Activa' }}
                                     </div>
                                 </td>
                             </tr>
