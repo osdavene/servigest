@@ -86,8 +86,7 @@ class TallerController extends Controller
                 'email' => $validados['email'],
                 'direccion' => $validados['direccion'] ?? null,
                 'ciudad' => $validados['ciudad'],
-                'fecha_inicio_suscripcion' => now(),
-                'fecha_fin_suscripcion' => $fechaFin,
+                'fecha_vencimiento_suscripcion' => $fechaFin,
                 'estado_suscripcion' => 'activo',
             ]);
 
@@ -128,7 +127,7 @@ class TallerController extends Controller
             'ciudad' => ['required', 'string', 'max:100'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'estado_suscripcion' => ['required', 'in:activo,periodo_prueba,suspendido,cancelado'],
-            'fecha_fin_suscripcion' => ['required', 'date'],
+            'fecha_vencimiento_suscripcion' => ['required', 'date'],
         ]);
 
         $taller->update($validados);
@@ -160,12 +159,12 @@ class TallerController extends Controller
     public function extenderLicencia(Request $request, Taller $taller)
     {
         $dias = (int) $request->input('dias', 30);
-        $fechaBase = ($taller->fecha_fin_suscripcion && $taller->fecha_fin_suscripcion->isFuture())
-            ? $taller->fecha_fin_suscripcion
+        $fechaBase = ($taller->fecha_vencimiento_suscripcion && $taller->fecha_vencimiento_suscripcion->isFuture())
+            ? $taller->fecha_vencimiento_suscripcion
             : now();
 
         $taller->update([
-            'fecha_fin_suscripcion' => $fechaBase->addDays($dias),
+            'fecha_vencimiento_suscripcion' => $fechaBase->copy()->addDays($dias),
             'estado_suscripcion' => 'activo',
         ]);
 

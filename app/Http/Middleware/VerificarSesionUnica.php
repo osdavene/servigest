@@ -18,8 +18,14 @@ class VerificarSesionUnica
             $usuario = Auth::user();
             $currentSessionId = $request->session()->getId();
 
-            // Si el usuario tiene un ID de sesión registrado y no coincide con la sesión de esta petición
-            if (!empty($usuario->current_session_id) && $usuario->current_session_id !== $currentSessionId) {
+            // Si el usuario acaba de autenticarse mediante la cookie persistente de "Recordar", sincronizamos la sesión
+            if (Auth::viaRemember()) {
+                $usuario->timestamps = false;
+                $usuario->update([
+                    'current_session_id' => $currentSessionId,
+                ]);
+                $usuario->timestamps = true;
+            } elseif (!empty($usuario->current_session_id) && $usuario->current_session_id !== $currentSessionId) {
                 $esSuperAdmin = $usuario->esSuperAdmin();
 
                 Auth::logout();

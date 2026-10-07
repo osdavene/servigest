@@ -76,7 +76,7 @@
                         <form method="POST" action="{{ route('login.post') }}" style="display: flex; gap: 8px; flex-wrap: wrap;">
                             @csrf
                             <input type="hidden" name="email" value="{{ session('sesion_activa_detectada.email') }}">
-                            <input type="hidden" name="password" value="{{ session('sesion_activa_detectada.password_temp') }}">
+                            <input type="hidden" name="token_desalojo" value="{{ session('sesion_activa_detectada.token_desalojo') }}">
                             <input type="hidden" name="forzar_cierre" value="1">
                             <button type="submit" class="btn-submit" style="padding: 9px 16px; font-size: 12.5px; width: auto; background: linear-gradient(135deg, #d97706, #b45309);">
                                 <i class="fa-solid fa-arrow-right-to-bracket"></i>
@@ -135,7 +135,7 @@
 
             <div class="form-options">
                 <label class="checkbox-label">
-                    <input type="checkbox" name="recordar" checked>
+                    <input type="checkbox" name="recordar">
                     <span>Recordar sesión</span>
                 </label>
             </div>

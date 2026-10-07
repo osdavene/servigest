@@ -6,7 +6,9 @@ use App\Models\Usuario;
 use App\Services\AuditoriaAccesoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AutenticacionController extends Controller
 {
@@ -31,6 +33,39 @@ class AutenticacionController extends Controller
      */
     public function iniciarSesion(Request $request)
     {
+        // 0. Si se confirmó el desalojo de la sesión previa mediante token de un solo uso
+        if ($request->boolean('forzar_cierre')) {
+            $tokenDesalojo = (string) $request->input('token_desalojo');
+            $datosDesalojo = $tokenDesalojo ? Cache::pull('desalojo_' . $tokenDesalojo) : null;
+
+            if (!$datosDesalojo || empty($datosDesalojo['usuario_id'])) {
+                return redirect()->route('login')->with('error', 'El tiempo de confirmación expiró o el enlace no es válido. Por favor ingrese sus credenciales nuevamente.');
+            }
+
+            $usuario = Usuario::find($datosDesalojo['usuario_id']);
+            if (!$usuario || !$usuario->esta_activo) {
+                return redirect()->route('login')->with('error', 'La cuenta se encuentra inactiva o fue deshabilitada.');
+            }
+
+            Auth::login($usuario, (bool) ($datosDesalojo['recordar'] ?? false));
+            $request->session()->regenerate();
+            $sessionId = $request->session()->getId();
+
+            $usuario->update([
+                'current_session_id' => $sessionId,
+                'ultimo_login_at' => now(),
+                'ultimo_login_ip' => $request->ip(),
+            ]);
+
+            $this->auditoriaService->registrarLoginExitoso($usuario, $request, $sessionId);
+
+            if ($usuario->esSuperAdmin()) {
+                return redirect()->intended(route('superadmin.talleres.index'));
+            }
+
+            return redirect()->intended(route('panel.index'));
+        }
+
         $credenciales = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
@@ -41,7 +76,6 @@ class AutenticacionController extends Controller
         ]);
 
         $recordar = $request->boolean('recordar');
-        $forzarCierre = $request->boolean('forzar_cierre');
 
         $usuario = Usuario::where('email', $credenciales['email'])->first();
 
@@ -54,13 +88,20 @@ class AutenticacionController extends Controller
             ])->onlyInput('email');
         }
 
-        // 2. Si el usuario ya tiene una sesión activa y aún no ha confirmado forzar el cierre
-        if ($usuario->estaEnLinea() && !$forzarCierre) {
+        // 2. Si el usuario ya tiene una sesión activa: generar token seguro de desalojo (TTL: 2 minutos)
+        if ($usuario->estaEnLinea()) {
             $ultimoAcceso = $this->auditoriaService->obtenerUltimoAccesoActivo($usuario);
+            $tokenDesalojo = Str::random(40);
+
+            Cache::put('desalojo_' . $tokenDesalojo, [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email,
+                'recordar' => $recordar,
+            ], now()->addMinutes(2));
 
             return back()->with('sesion_activa_detectada', [
                 'email' => $usuario->email,
-                'password_temp' => $credenciales['password'],
+                'token_desalojo' => $tokenDesalojo,
                 'dispositivo' => $ultimoAcceso?->dispositivo ?? 'Otro dispositivo',
                 'navegador' => $ultimoAcceso?->navegador ?? 'Navegador Web',
                 'ubicacion' => $ultimoAcceso?->ciudad ? ($ultimoAcceso->ciudad . ', ' . $ultimoAcceso->pais) : 'Ubicación remota',
@@ -107,12 +148,41 @@ class AutenticacionController extends Controller
      */
     public function iniciarSesionSuperAdmin(Request $request)
     {
+        // 0. Confirmación de desalojo con token seguro de un solo uso
+        if ($request->boolean('forzar_cierre')) {
+            $tokenDesalojo = (string) $request->input('token_desalojo');
+            $datosDesalojo = $tokenDesalojo ? Cache::pull('desalojo_' . $tokenDesalojo) : null;
+
+            if (!$datosDesalojo || empty($datosDesalojo['usuario_id'])) {
+                return redirect()->route('superadmin.login')->with('error', 'El tiempo de confirmación expiró o el enlace no es válido. Por favor ingrese de nuevo.');
+            }
+
+            $usuario = Usuario::where('id', $datosDesalojo['usuario_id'])->where('rol', 'super_administrador')->first();
+            if (!$usuario || !$usuario->esta_activo) {
+                return redirect()->route('superadmin.login')->with('error', 'La cuenta de Super Administrador está inactiva o no existe.');
+            }
+
+            Auth::login($usuario, (bool) ($datosDesalojo['recordar'] ?? false));
+            $request->session()->regenerate();
+            $sessionId = $request->session()->getId();
+
+            $usuario->update([
+                'current_session_id' => $sessionId,
+                'ultimo_login_at' => now(),
+                'ultimo_login_ip' => $request->ip(),
+            ]);
+
+            $this->auditoriaService->registrarLoginExitoso($usuario, $request, $sessionId);
+
+            return redirect()->intended(route('superadmin.talleres.index'));
+        }
+
         $credenciales = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
-        $forzarCierre = $request->boolean('forzar_cierre');
+        $recordar = $request->boolean('recordar');
         $usuario = Usuario::where('email', $credenciales['email'])->where('rol', 'super_administrador')->first();
 
         if (!$usuario || !Hash::check($credenciales['password'], $usuario->password) || !$usuario->esta_activo) {
@@ -123,12 +193,19 @@ class AutenticacionController extends Controller
             ])->onlyInput('email');
         }
 
-        if ($usuario->estaEnLinea() && !$forzarCierre) {
+        if ($usuario->estaEnLinea()) {
             $ultimoAcceso = $this->auditoriaService->obtenerUltimoAccesoActivo($usuario);
+            $tokenDesalojo = Str::random(40);
+
+            Cache::put('desalojo_' . $tokenDesalojo, [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email,
+                'recordar' => $recordar,
+            ], now()->addMinutes(2));
 
             return back()->with('sesion_activa_detectada', [
                 'email' => $usuario->email,
-                'password_temp' => $credenciales['password'],
+                'token_desalojo' => $tokenDesalojo,
                 'dispositivo' => $ultimoAcceso?->dispositivo ?? 'Otro dispositivo',
                 'navegador' => $ultimoAcceso?->navegador ?? 'Navegador Web',
                 'ubicacion' => $ultimoAcceso?->ciudad ? ($ultimoAcceso->ciudad . ', ' . $ultimoAcceso->pais) : 'Ubicación remota',
@@ -137,7 +214,7 @@ class AutenticacionController extends Controller
             ])->onlyInput('email');
         }
 
-        Auth::login($usuario, $request->boolean('recordar'));
+        Auth::login($usuario, $recordar);
         $request->session()->regenerate();
         $sessionId = $request->session()->getId();
 

@@ -24,17 +24,17 @@
                         <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); font-size: 9.5px;">
                             Infraestructura Completa
                         </span>
-                        <h4 style="font-size: 16px; font-weight: 900; color: #ffffff; margin-top: 2px;">Respaldo Global (.sqlite)</h4>
+                        <h4 style="font-size: 16px; font-weight: 900; color: #ffffff; margin-top: 2px;">Respaldo Global ({{ strtoupper($driverBd) }})</h4>
                     </div>
                 </div>
                 <p style="font-size: 12.5px; color: #d1d5db; line-height: 1.5;">
-                    Copia en caliente de toda la base de datos con todos los talleres, planes, usuarios y configuraciones maestras. Tamaño actual: <strong>{{ $tamanoBd }} KB</strong>.
+                    Copia en caliente de toda la base de datos ({{ strtoupper($driverBd) }}) con todos los talleres, planes, usuarios y configuraciones maestras. Tamaño estimado: <strong>{{ number_format($tamanoBd, 2) }} KB</strong>.
                 </p>
             </div>
 
             <a href="{{ route('superadmin.respaldos.global') }}" class="btn btn-amber" style="margin-top: 20px; padding: 12px; justify-content: center;">
                 <i class="fa-solid fa-cloud-arrow-down"></i>
-                <span>Descargar Base de Datos Global</span>
+                <span>Descargar Base de Datos Global ({{ strtoupper($driverBd) }})</span>
             </a>
         </div>
 

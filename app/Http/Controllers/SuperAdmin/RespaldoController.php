@@ -20,27 +20,137 @@ class RespaldoController extends Controller
             ->orderBy('nombre_comercial')
             ->get();
 
-        $rutaBd = database_path('database.sqlite');
-        $tamanoBd = file_exists($rutaBd) ? round(filesize($rutaBd) / 1024, 2) : 0; // en KB
+        $driverBd = config('database.default', 'sqlite');
+        $tamanoBd = 0; // en KB
 
-        return view('superadmin.respaldos.index', compact('talleres', 'tamanoBd'));
+        if ($driverBd === 'sqlite') {
+            $rutaBd = config('database.connections.sqlite.database', database_path('database.sqlite'));
+            $tamanoBd = file_exists($rutaBd) ? round(filesize($rutaBd) / 1024, 2) : 0;
+        } elseif ($driverBd === 'mysql') {
+            try {
+                $dbName = config('database.connections.mysql.database');
+                $res = DB::select("
+                    SELECT ROUND(SUM(data_length + index_length) / 1024, 2) AS tamano_kb 
+                    FROM information_schema.tables 
+                    WHERE table_schema = ?
+                ", [$dbName]);
+                $tamanoBd = $res[0]->tamano_kb ?? 0;
+            } catch (\Throwable $e) {
+                $tamanoBd = 0;
+            }
+        }
+
+        return view('superadmin.respaldos.index', compact('talleres', 'tamanoBd', 'driverBd'));
     }
 
     /**
-     * Genera y descarga una copia completa de toda la Base de Datos del sistema.
+     * Genera y descarga una copia completa de toda la Base de Datos del sistema (compatible con SQLite y MySQL).
      */
     public function descargarGlobal()
     {
-        $rutaBd = database_path('database.sqlite');
+        $driverBd = config('database.default', 'sqlite');
+        $fecha = now()->format('Y-m-d_H-i-s');
 
-        if (!file_exists($rutaBd)) {
-            return back()->with('error', 'El archivo de base de datos no fue encontrado.');
+        // 1. Manejo para SQLite
+        if ($driverBd === 'sqlite') {
+            $rutaBd = config('database.connections.sqlite.database', database_path('database.sqlite'));
+
+            if (!file_exists($rutaBd)) {
+                return back()->with('error', 'El archivo de base de datos SQLite no fue encontrado en el servidor.');
+            }
+
+            $nombreArchivo = "ServiGest_Backup_GLOBAL_{$fecha}.sqlite";
+            return response()->download($rutaBd, $nombreArchivo);
         }
 
-        $fecha = now()->format('Y-m-d_H-i-s');
-        $nombreArchivo = "ServiGest_Backup_GLOBAL_{$fecha}.sqlite";
+        // 2. Manejo para MySQL en Producción (AWS / Docker)
+        if ($driverBd === 'mysql') {
+            try {
+                $dbName = config('database.connections.mysql.database');
+                $nombreArchivo = "ServiGest_Backup_GLOBAL_{$fecha}.sql";
+                
+                $dirPrivado = storage_path('app/private');
+                if (!is_dir($dirPrivado)) {
+                    mkdir($dirPrivado, 0755, true);
+                }
+                $rutaSql = "{$dirPrivado}/{$nombreArchivo}";
+                $fp = fopen($rutaSql, 'w');
 
-        return response()->download($rutaBd, $nombreArchivo);
+                if (!$fp) {
+                    return back()->with('error', 'No se pudo crear el archivo temporal de respaldo en disco.');
+                }
+
+                // Cabecera SQL estándar
+                $fechaTexto = now()->toDateTimeString();
+                fwrite($fp, "-- ============================================================\n");
+                fwrite($fp, "-- ServiGest SaaS - Volcado Global de Base de Datos MySQL\n");
+                fwrite($fp, "-- Base de datos: `{$dbName}`\n");
+                fwrite($fp, "-- Generado: {$fechaTexto}\n");
+                fwrite($fp, "-- ============================================================\n\n");
+                fwrite($fp, "SET FOREIGN_KEY_CHECKS=0;\n");
+                fwrite($fp, "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n");
+                fwrite($fp, "SET time_zone = \"+00:00\";\n\n");
+
+                $tablasRaw = DB::select('SHOW TABLES');
+                foreach ($tablasRaw as $filaTabla) {
+                    $propiedades = (array) $filaTabla;
+                    $nombreTabla = reset($propiedades);
+
+                    if (empty($nombreTabla)) {
+                        continue;
+                    }
+
+                    // Estructura de la tabla (CREATE TABLE)
+                    $createRes = DB::select("SHOW CREATE TABLE `{$nombreTabla}`");
+                    $createArray = (array) ($createRes[0] ?? []);
+                    $createSql = $createArray['Create Table'] ?? null;
+
+                    if ($createSql) {
+                        fwrite($fp, "-- --------------------------------------------------------\n");
+                        fwrite($fp, "-- Estructura de tabla para `{$nombreTabla}`\n");
+                        fwrite($fp, "-- --------------------------------------------------------\n");
+                        fwrite($fp, "DROP TABLE IF EXISTS `{$nombreTabla}`;\n");
+                        fwrite($fp, $createSql . ";\n\n");
+                    }
+
+                    // Datos de la tabla por fragmentos para optimizar RAM
+                    $totalFilas = DB::table($nombreTabla)->count();
+                    if ($totalFilas > 0) {
+                        fwrite($fp, "-- Volcado de datos para la tabla `{$nombreTabla}` ({$totalFilas} registros)\n");
+                        DB::table($nombreTabla)->orderBy(DB::raw('1'))->chunk(250, function ($filas) use ($fp, $nombreTabla) {
+                            foreach ($filas as $fila) {
+                                $arrFila = (array) $fila;
+                                $columnas = array_keys($arrFila);
+                                $valores = array_map(function ($val) {
+                                    if (is_null($val)) {
+                                        return 'NULL';
+                                    }
+                                    return DB::getPdo()->quote((string) $val);
+                                }, array_values($arrFila));
+
+                                $insertSql = "INSERT INTO `{$nombreTabla}` (`" . implode('`, `', $columnas) . "`) VALUES (" . implode(', ', $valores) . ");\n";
+                                fwrite($fp, $insertSql);
+                            }
+                        });
+                        fwrite($fp, "\n");
+                    }
+                }
+
+                // Pie SQL
+                fwrite($fp, "SET FOREIGN_KEY_CHECKS=1;\n");
+                fwrite($fp, "-- Fin del respaldo ServiGest SaaS\n");
+                fclose($fp);
+
+                return response()->download($rutaSql, $nombreArchivo, [
+                    'Content-Type' => 'application/sql',
+                ])->deleteFileAfterSend(true);
+
+            } catch (\Throwable $e) {
+                return back()->with('error', 'Error al generar el respaldo de MySQL: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('error', "El motor de base de datos ({$driverBd}) no cuenta con exportación directa.");
     }
 
     /**
@@ -177,7 +287,7 @@ class RespaldoController extends Controller
                 'direccion' => $empresaData['direccion'] ?? null,
                 'ciudad' => $empresaData['ciudad'] ?? 'Bogotá',
                 'estado_suscripcion' => $empresaData['estado_suscripcion'] ?? 'activo',
-                'fecha_fin_suscripcion' => $empresaData['fecha_fin_suscripcion'] ?? now()->addMonth(),
+                'fecha_vencimiento_suscripcion' => $empresaData['fecha_vencimiento_suscripcion'] ?? $empresaData['fecha_fin_suscripcion'] ?? now()->addMonth(),
                 'prefijo_orden' => $empresaData['prefijo_orden'] ?? 'OT',
                 'url_logo' => $empresaData['url_logo'] ?? null,
                 'texto_garantia' => $empresaData['texto_garantia'] ?? null,

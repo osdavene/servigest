@@ -140,7 +140,7 @@
                             </td>
                             <td>
                                 <span style="font-size: 13px; font-weight: 700; color: var(--text-main, #0f172a); display: block;">
-                                    {{ $taller->fecha_fin_suscripcion?->format('d/m/Y') }}
+                                    {{ $taller->fecha_vencimiento_suscripcion?->format('d/m/Y') ?? 'Sin fecha' }}
                                 </span>
                                 @if($taller->dias_restantes_licencia <= 7)
                                     <span class="badge badge-danger" style="font-size: 9px;">¡{{ $taller->dias_restantes_licencia }} días!</span>
