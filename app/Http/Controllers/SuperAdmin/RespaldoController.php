@@ -223,18 +223,24 @@ class RespaldoController extends Controller
 
     /**
      * Motor de Restauración Exclusivo para el Super Administrador.
-     * Restaura una empresa completa al 100% de operatividad a partir de su archivo .ZIP o .JSON.
+     * Restaura una empresa completa al 100% con aislamiento multi-inquilino estricto,
+     * remapeo de llaves para evitar colisiones entre talleres y sanitización de archivos.
      */
     public function restaurarEmpresa(Request $request)
     {
         $request->validate([
-            'archivo_backup' => ['required', 'file'],
+            'archivo_backup' => ['required', 'file', 'max:102400'], // Máx 100MB
         ], [
             'archivo_backup.required' => 'Debe seleccionar un archivo de copia de seguridad (.zip o .json) para restaurar.',
+            'archivo_backup.max' => 'El archivo no debe superar los 100 MB.',
         ]);
 
         $archivo = $request->file('archivo_backup');
         $extension = strtolower($archivo->getClientOriginalExtension());
+        if (!in_array($extension, ['zip', 'json'])) {
+            return back()->with('error', 'Formato no permitido. Solo se aceptan archivos .zip o .json.');
+        }
+
         $paquete = null;
 
         // 1. Si es archivo .ZIP (Base de Datos + Fotos físicas)
@@ -247,11 +253,26 @@ class RespaldoController extends Controller
                     $paquete = json_decode($jsonContenido, true);
                 }
 
-                // Extraer y restaurar todas las fotos físicas al disco público
+                // Extensiones estrictamente permitidas para fotos y logos (Protección RCE)
+                $extensionesSeguras = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
+
+                // Extraer y restaurar todas las fotos físicas al disco público de forma segura
                 for ($i = 0; $i < $zip->numFiles; $i++) {
                     $nombreEnZip = $zip->getNameIndex($i);
                     if (str_starts_with($nombreEnZip, 'archivos/') && !str_ends_with($nombreEnZip, '/')) {
                         $rutaRelativaPublic = substr($nombreEnZip, strlen('archivos/'));
+
+                        // Protección contra Directory Traversal (../../)
+                        if (str_contains($rutaRelativaPublic, '..') || str_starts_with($rutaRelativaPublic, '/') || str_starts_with($rutaRelativaPublic, '\\')) {
+                            continue;
+                        }
+
+                        // Validación de extensión permitida
+                        $extArchivo = strtolower(pathinfo($rutaRelativaPublic, PATHINFO_EXTENSION));
+                        if (!in_array($extArchivo, $extensionesSeguras)) {
+                            continue;
+                        }
+
                         $contenidoArchivo = $zip->getFromIndex($i);
                         Storage::disk('public')->put($rutaRelativaPublic, $contenidoArchivo);
                     }
@@ -273,11 +294,19 @@ class RespaldoController extends Controller
         $empresaData = (array) $paquete['empresa'];
         $datos = $paquete['datos'];
 
-        // 3. Transacción atómica de Base de Datos
+        // 3. Transacción atómica de Base de Datos con Remapeo Seguro de IDs (Aislamiento Multi-Tenant)
         DB::transaction(function () use ($empresaData, $datos) {
             // A. Sincronizar o crear Taller
-            $tallerId = $empresaData['id'] ?? null;
-            $taller = Taller::withTrashed()->find($tallerId);
+            $taller = null;
+            if (!empty($empresaData['email'])) {
+                $taller = Taller::withTrashed()->where('email', $empresaData['email'])->first();
+            }
+            if (!$taller && !empty($empresaData['id'])) {
+                $posibleTaller = Taller::withTrashed()->find($empresaData['id']);
+                if ($posibleTaller && $posibleTaller->nombre_comercial === $empresaData['nombre_comercial']) {
+                    $taller = $posibleTaller;
+                }
+            }
 
             $datosTaller = [
                 'nombre_comercial' => $empresaData['nombre_comercial'],
@@ -289,7 +318,7 @@ class RespaldoController extends Controller
                 'estado_suscripcion' => $empresaData['estado_suscripcion'] ?? 'activo',
                 'fecha_vencimiento_suscripcion' => $empresaData['fecha_vencimiento_suscripcion'] ?? $empresaData['fecha_fin_suscripcion'] ?? now()->addMonth(),
                 'prefijo_orden' => $empresaData['prefijo_orden'] ?? 'OT',
-                'url_logo' => $empresaData['url_logo'] ?? null,
+                'logo_ruta' => $empresaData['logo_ruta'] ?? $empresaData['url_logo'] ?? null,
                 'texto_garantia' => $empresaData['texto_garantia'] ?? null,
                 'deleted_at' => null,
             ];
@@ -297,79 +326,189 @@ class RespaldoController extends Controller
             if ($taller) {
                 $taller->update($datosTaller);
             } else {
-                $datosTaller['id'] = $tallerId;
                 $datosTaller['plan_licencia_id'] = $empresaData['plan_licencia_id'] ?? 1;
                 $taller = Taller::create($datosTaller);
             }
 
-            // B. Restaurar Categorías
+            // Mapas para traducir IDs originales a los IDs reales generados en la base de datos
+            $mapaCategorias = [];
+            $mapaClientes = [];
+            $mapaEquipos = [];
+            $mapaUsuarios = [];
+            $mapaOrdenes = [];
+
+            // B. Restaurar Categorías de forma aislada
             if (!empty($datos['categorias'])) {
                 foreach ($datos['categorias'] as $cat) {
                     $cat = (array) $cat;
-                    DB::table('categorias')->updateOrInsert(
-                        ['id' => $cat['id']],
-                        array_merge($cat, ['taller_id' => $taller->id, 'deleted_at' => $cat['deleted_at'] ?? null])
-                    );
+                    $oldId = $cat['id'];
+                    unset($cat['id']);
+                    $cat['taller_id'] = $taller->id;
+                    $cat['deleted_at'] = $cat['deleted_at'] ?? null;
+
+                    $catExistente = DB::table('categorias')
+                        ->where('taller_id', $taller->id)
+                        ->where('nombre', $cat['nombre'])
+                        ->first();
+
+                    if ($catExistente) {
+                        DB::table('categorias')->where('id', $catExistente->id)->update($cat);
+                        $mapaCategorias[$oldId] = $catExistente->id;
+                    } else {
+                        $newId = DB::table('categorias')->insertGetId($cat);
+                        $mapaCategorias[$oldId] = $newId;
+                    }
                 }
             }
 
-            // C. Restaurar Clientes
-            if (!empty($datos['clientes'])) {
-                foreach ($datos['clientes'] as $cli) {
-                    $cli = (array) $cli;
-                    DB::table('clientes')->updateOrInsert(
-                        ['id' => $cli['id']],
-                        array_merge($cli, ['taller_id' => $taller->id, 'deleted_at' => $cli['deleted_at'] ?? null])
-                    );
-                }
-            }
-
-            // D. Restaurar Equipos
-            if (!empty($datos['equipos'])) {
-                foreach ($datos['equipos'] as $eq) {
-                    $eq = (array) $eq;
-                    DB::table('equipos')->updateOrInsert(
-                        ['id' => $eq['id']],
-                        array_merge($eq, ['taller_id' => $taller->id, 'deleted_at' => $eq['deleted_at'] ?? null])
-                    );
-                }
-            }
-
-            // E. Restaurar Usuarios (con credenciales y contraseñas intactas)
+            // C. Restaurar Usuarios con protección contra elevación de privilegios
             if (!empty($datos['usuarios'])) {
                 foreach ($datos['usuarios'] as $u) {
                     $u = (array) $u;
-                    DB::table('usuarios')->updateOrInsert(
-                        ['id' => $u['id']],
-                        array_merge($u, ['taller_id' => $taller->id, 'deleted_at' => $u['deleted_at'] ?? null])
-                    );
+                    $oldId = $u['id'];
+                    unset($u['id']);
+                    $u['taller_id'] = $taller->id;
+                    $u['deleted_at'] = $u['deleted_at'] ?? null;
+
+                    // Bloquear asignación de rol super_administrador desde respaldos de taller
+                    if (($u['rol'] ?? '') === 'super_administrador') {
+                        $u['rol'] = 'administrador';
+                    }
+
+                    $userExistente = DB::table('usuarios')->where('email', $u['email'])->first();
+
+                    if ($userExistente && $userExistente->taller_id == $taller->id) {
+                        DB::table('usuarios')->where('id', $userExistente->id)->update($u);
+                        $mapaUsuarios[$oldId] = $userExistente->id;
+                    } elseif (!$userExistente) {
+                        $newId = DB::table('usuarios')->insertGetId($u);
+                        $mapaUsuarios[$oldId] = $newId;
+                    } else {
+                        // Si el email pertenece a otro taller, diferenciamos el email restaurado
+                        $u['email'] = 'restaurado_' . uniqid() . '_' . $u['email'];
+                        $newId = DB::table('usuarios')->insertGetId($u);
+                        $mapaUsuarios[$oldId] = $newId;
+                    }
                 }
             }
 
-            // F. Restaurar Órdenes de Trabajo
+            // D. Restaurar Clientes
+            if (!empty($datos['clientes'])) {
+                foreach ($datos['clientes'] as $cli) {
+                    $cli = (array) $cli;
+                    $oldId = $cli['id'];
+                    unset($cli['id']);
+                    $cli['taller_id'] = $taller->id;
+                    $cli['deleted_at'] = $cli['deleted_at'] ?? null;
+
+                    $cliExistente = null;
+                    if (!empty($cli['identificacion'])) {
+                        $cliExistente = DB::table('clientes')
+                            ->where('taller_id', $taller->id)
+                            ->where('identificacion', $cli['identificacion'])
+                            ->first();
+                    }
+
+                    if ($cliExistente) {
+                        DB::table('clientes')->where('id', $cliExistente->id)->update($cli);
+                        $mapaClientes[$oldId] = $cliExistente->id;
+                    } else {
+                        $newId = DB::table('clientes')->insertGetId($cli);
+                        $mapaClientes[$oldId] = $newId;
+                    }
+                }
+            }
+
+            // E. Restaurar Equipos con llaves foráneas remapeadas
+            if (!empty($datos['equipos'])) {
+                foreach ($datos['equipos'] as $eq) {
+                    $eq = (array) $eq;
+                    $oldId = $eq['id'];
+                    unset($eq['id']);
+                    $eq['taller_id'] = $taller->id;
+                    $eq['deleted_at'] = $eq['deleted_at'] ?? null;
+
+                    if (!empty($eq['cliente_id']) && isset($mapaClientes[$eq['cliente_id']])) {
+                        $eq['cliente_id'] = $mapaClientes[$eq['cliente_id']];
+                    }
+                    if (!empty($eq['categoria_id']) && isset($mapaCategorias[$eq['categoria_id']])) {
+                        $eq['categoria_id'] = $mapaCategorias[$eq['categoria_id']];
+                    }
+
+                    $eqExistente = null;
+                    if (!empty($eq['numero_serie'])) {
+                        $eqExistente = DB::table('equipos')
+                            ->where('taller_id', $taller->id)
+                            ->where('numero_serie', $eq['numero_serie'])
+                            ->first();
+                    }
+
+                    if ($eqExistente) {
+                        DB::table('equipos')->where('id', $eqExistente->id)->update($eq);
+                        $mapaEquipos[$oldId] = $eqExistente->id;
+                    } else {
+                        $newId = DB::table('equipos')->insertGetId($eq);
+                        $mapaEquipos[$oldId] = $newId;
+                    }
+                }
+            }
+
+            // F. Restaurar Órdenes de Trabajo con llaves foráneas remapeadas
             if (!empty($datos['ordenes_trabajo'])) {
                 foreach ($datos['ordenes_trabajo'] as $ot) {
                     $ot = (array) $ot;
-                    DB::table('ordenes_trabajo')->updateOrInsert(
-                        ['id' => $ot['id']],
-                        array_merge($ot, ['taller_id' => $taller->id, 'deleted_at' => $ot['deleted_at'] ?? null])
-                    );
+                    $oldId = $ot['id'];
+                    unset($ot['id']);
+                    $ot['taller_id'] = $taller->id;
+                    $ot['deleted_at'] = $ot['deleted_at'] ?? null;
+
+                    if (!empty($ot['cliente_id']) && isset($mapaClientes[$ot['cliente_id']])) {
+                        $ot['cliente_id'] = $mapaClientes[$ot['cliente_id']];
+                    }
+                    if (!empty($ot['equipo_id']) && isset($mapaEquipos[$ot['equipo_id']])) {
+                        $ot['equipo_id'] = $mapaEquipos[$ot['equipo_id']];
+                    }
+                    if (!empty($ot['tecnico_asignado_id']) && isset($mapaUsuarios[$ot['tecnico_asignado_id']])) {
+                        $ot['tecnico_asignado_id'] = $mapaUsuarios[$ot['tecnico_asignado_id']];
+                    }
+
+                    $otExistente = null;
+                    if (!empty($ot['codigo_orden'])) {
+                        $otExistente = DB::table('ordenes_trabajo')
+                            ->where('taller_id', $taller->id)
+                            ->where('codigo_orden', $ot['codigo_orden'])
+                            ->first();
+                    }
+
+                    if ($otExistente) {
+                        DB::table('ordenes_trabajo')->where('id', $otExistente->id)->update($ot);
+                        $mapaOrdenes[$oldId] = $otExistente->id;
+                    } else {
+                        $newId = DB::table('ordenes_trabajo')->insertGetId($ot);
+                        $mapaOrdenes[$oldId] = $newId;
+                    }
                 }
             }
 
-            // G. Restaurar Evidencias Fotográficas
+            // G. Restaurar Evidencias Fotográficas vinculadas a las órdenes correctas
             if (!empty($datos['evidencias_fotograficas'])) {
                 foreach ($datos['evidencias_fotograficas'] as $ev) {
                     $ev = (array) $ev;
-                    DB::table('evidencias_fotograficas')->updateOrInsert(
-                        ['id' => $ev['id']],
-                        $ev
-                    );
+                    unset($ev['id']);
+                    $ev['taller_id'] = $taller->id;
+
+                    if (!empty($ev['orden_trabajo_id']) && isset($mapaOrdenes[$ev['orden_trabajo_id']])) {
+                        $ev['orden_trabajo_id'] = $mapaOrdenes[$ev['orden_trabajo_id']];
+                    }
+
+                    if (!empty($ev['orden_trabajo_id'])) {
+                        DB::table('evidencias_fotograficas')->insert($ev);
+                    }
                 }
             }
         });
 
         return redirect()->route('superadmin.respaldos.index')
-            ->with('exito', "¡Copia de seguridad restaurada exitosamente para '{$empresaData['nombre_comercial']}'! Se restablecieron todas las tablas y los archivos físicos de fotos.");
+            ->with('exito', "¡Copia de seguridad restaurada exitosamente para '{$empresaData['nombre_comercial']}'! Se preservó el aislamiento de datos y se restablecieron los archivos físicos.");
     }
 }

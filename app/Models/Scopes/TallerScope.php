@@ -13,10 +13,11 @@ class TallerScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        // Si el usuario es SuperAdmin navegando globalmente, no se restringe por scope a menos que haya seleccionado un taller activo
+        // 1. Si el usuario está autenticado en la sesión
         if (auth()->check()) {
             $usuario = auth()->user();
 
+            // Super Administrador navegando globalmente: no se restringe a menos que haya fijado un taller activo
             if ($usuario->esSuperAdmin()) {
                 if (session()->has('taller_id_activo')) {
                     $builder->where($model->getTable() . '.taller_id', session('taller_id_activo'));
@@ -24,11 +25,25 @@ class TallerScope implements Scope
                 return;
             }
 
-            if ($usuario->taller_id) {
+            // Usuario del taller (Administrador o Técnico): filtro estricto por su taller_id
+            if (!empty($usuario->taller_id)) {
                 $builder->where($model->getTable() . '.taller_id', $usuario->taller_id);
+                return;
             }
-        } elseif (session()->has('taller_id_activo')) {
-            $builder->where($model->getTable() . '.taller_id', session('taller_id_activo'));
+
+            // Si está autenticado pero no tiene ningún taller asignado: FAIL-CLOSED (no exponer datos)
+            $builder->whereRaw('1 = 0');
+            return;
         }
+
+        // 2. Si es una petición no autenticada pero cuenta con taller activo en sesión
+        if (session()->has('taller_id_activo')) {
+            $builder->where($model->getTable() . '.taller_id', session('taller_id_activo'));
+            return;
+        }
+
+        // 3. Consulta sin autenticación y sin sesión de inquilino: FAIL-CLOSED por principio de mínimo privilegio.
+        // Las consultas públicas legítimas (Portal o Reportes PDF) invocan withoutGlobalScopes() explícitamente.
+        $builder->whereRaw('1 = 0');
     }
 }

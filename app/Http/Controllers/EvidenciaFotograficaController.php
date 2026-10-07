@@ -15,6 +15,8 @@ class EvidenciaFotograficaController extends Controller
      */
     public function store(Request $request, OrdenTrabajo $orden)
     {
+        $this->authorize('update', $orden);
+
         $request->validate([
             'foto' => ['required', 'image', 'max:15360'], // Permite hasta 15MB desde celulares
             'etiqueta' => ['required', 'in:como_se_recibe,antes,falla_detectada,falla_en_placa,durante_reparacion,durante,como_se_devuelve,despues,otra'],
@@ -47,6 +49,8 @@ class EvidenciaFotograficaController extends Controller
      */
     public function destroy(EvidenciaFotografica $evidencia)
     {
+        $this->authorize('update', $evidencia->ordenTrabajo);
+
         if ($evidencia->ruta_imagen) {
             OptimizadorImagenes::eliminar($evidencia->ruta_imagen);
         }

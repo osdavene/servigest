@@ -13,6 +13,8 @@ class ReportePdfController extends Controller
      */
     public function descargarPdf(OrdenTrabajo $orden)
     {
+        $this->authorize('view', $orden);
+
         $orden->load(['cliente', 'equipo.categoria', 'tecnico', 'evidencias', 'taller']);
 
         $pdf = Pdf::loadView('ordenes.pdf_plantilla', compact('orden'))

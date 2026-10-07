@@ -47,7 +47,7 @@ class ConfiguracionTallerController extends Controller
             'whatsapp_api_provider' => ['nullable', 'string', 'in:webhook_personalizado,whatsapp_cloud_api,ultramsg'],
             'whatsapp_api_token' => ['nullable', 'string', 'max:1000'],
             'whatsapp_phone_number_id' => ['nullable', 'string', 'max:100'],
-            'whatsapp_webhook_url' => ['nullable', 'url', 'max:255'],
+            'whatsapp_webhook_url' => ['nullable', 'url', 'starts_with:https://', 'max:255'],
             'whatsapp_template_creada' => ['nullable', 'string', 'max:1000'],
             'whatsapp_template_en_proceso' => ['nullable', 'string', 'max:1000'],
             'whatsapp_template_finalizada' => ['nullable', 'string', 'max:1000'],
@@ -56,6 +56,7 @@ class ConfiguracionTallerController extends Controller
             'nombre_comercial.required' => 'El nombre del taller es obligatorio.',
             'telefono.required' => 'El teléfono de contacto es obligatorio.',
             'email.required' => 'El correo electrónico es obligatorio.',
+            'whatsapp_webhook_url.starts_with' => 'Por motivos de seguridad, la URL del webhook de WhatsApp debe iniciar obligatoriamente con HTTPS (https://).',
             'logo.image' => 'El archivo seleccionado debe ser una imagen válida.',
             'logo.max' => 'El logo no debe superar los 3 MB de tamaño.',
         ]);

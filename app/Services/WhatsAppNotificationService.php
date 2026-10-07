@@ -81,9 +81,47 @@ class WhatsAppNotificationService
         return str_replace(array_keys($reemplazos), array_values($reemplazos), $plantilla);
     }
 
+    /**
+     * Valida que una URL externa no apunte a localhost, redes privadas o metadatos de la nube (Protección SSRF).
+     */
+    public static function esUrlSegura(?string $url): bool
+    {
+        if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $parsed = parse_url($url);
+        $scheme = strtolower($parsed['scheme'] ?? '');
+        $host = strtolower($parsed['host'] ?? '');
+
+        // 1. Exigir HTTPS estrictamente
+        if ($scheme !== 'https') {
+            return false;
+        }
+
+        // 2. Bloquear localhost y nombres de host locales o internos
+        if (in_array($host, ['localhost', '127.0.0.1', '::1', '0.0.0.0']) || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return false;
+        }
+
+        // 3. Resolver IP del host y bloquear IPs privadas, de loopback y de metadatos de nube (AWS 169.254.169.254)
+        $ip = gethostbyname($host);
+        if ($ip && filter_var($ip, FILTER_VALIDATE_IP)) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+            if (str_starts_with($ip, '169.254.')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static function enviarWebhook($taller, string $telefono, string $mensaje, OrdenTrabajo $orden): bool
     {
-        if (empty($taller->whatsapp_webhook_url)) {
+        if (empty($taller->whatsapp_webhook_url) || !self::esUrlSegura($taller->whatsapp_webhook_url)) {
+            Log::warning("Envío de webhook WhatsApp omitido por URL inválida o no segura (SSRF) en taller ID: {$taller->id}");
             return false;
         }
 

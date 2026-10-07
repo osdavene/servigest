@@ -31,21 +31,21 @@ Route::get('/', function () {
 
 // Autenticación de Clientes y Técnicos (Talleres)
 Route::get('/login', [AutenticacionController::class, 'mostrarFormularioLogin'])->name('login');
-Route::post('/login', [AutenticacionController::class, 'iniciarSesion'])->name('login.post');
+Route::post('/login', [AutenticacionController::class, 'iniciarSesion'])->middleware('throttle:5,1')->name('login.post');
 Route::post('/logout', [AutenticacionController::class, 'cerrarSesion'])->name('logout');
 
 // Acceso Exclusivo y Privado para el Dueño del SaaS (Super Administrador)
 Route::get('/control-central', [AutenticacionController::class, 'mostrarFormularioLoginSuperAdmin'])->name('superadmin.login');
-Route::post('/control-central', [AutenticacionController::class, 'iniciarSesionSuperAdmin'])->name('superadmin.login.post');
+Route::post('/control-central', [AutenticacionController::class, 'iniciarSesionSuperAdmin'])->middleware('throttle:5,1')->name('superadmin.login.post');
 
 // Rutas Públicas de Consulta e Informe para Clientes (acceso directo desde enlace de WhatsApp)
 Route::get('/servicio/{token}', [ReportePdfController::class, 'verPdfPublico'])->name('ordenes.pdf.publico');
 Route::get('/servicio/{token}/ver', [ReportePdfController::class, 'verPdfPublico'])->name('ordenes.publico');
-Route::get('/servicio/{token}/descargar-pdf', [ReportePdfController::class, 'descargarPdfPublico'])->name('ordenes.pdf.descargar_publico');
+Route::get('/servicio/{token}/descargar-pdf', [ReportePdfController::class, 'descargarPdfPublico'])->middleware('throttle:20,1')->name('ordenes.pdf.descargar_publico');
 
 // Portal de Autoservicio para Clientes B2B
 Route::get('/portal/{token}', [\App\Http\Controllers\PortalClienteController::class, 'index'])->name('portal.cliente');
-Route::post('/portal/{token}/solicitar', [\App\Http\Controllers\PortalClienteController::class, 'solicitarServicio'])->name('portal.cliente.solicitar');
+Route::post('/portal/{token}/solicitar', [\App\Http\Controllers\PortalClienteController::class, 'solicitarServicio'])->middleware('throttle:10,1')->name('portal.cliente.solicitar');
 
 // Rutas Protegidas del Sistema
 Route::middleware(['auth'])->group(function () {
