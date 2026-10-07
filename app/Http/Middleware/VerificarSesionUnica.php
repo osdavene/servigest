@@ -42,10 +42,10 @@ class VerificarSesionUnica
             }
 
             // Actualizar timestamp de última actividad si han pasado más de 2 minutos
-            if (empty($usuario->ultimo_login_at) || $usuario->ultimo_login_at->diffInMinutes(now()) >= 2) {
+            if (empty($usuario->ultima_actividad_at) || $usuario->ultima_actividad_at->diffInMinutes(now()) >= 2) {
                 $usuario->timestamps = false;
                 $usuario->update([
-                    'ultimo_login_at' => now(),
+                    'ultima_actividad_at' => now(),
                 ]);
                 $usuario->timestamps = true;
             }

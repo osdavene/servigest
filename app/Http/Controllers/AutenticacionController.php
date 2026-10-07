@@ -54,6 +54,7 @@ class AutenticacionController extends Controller
             $usuario->update([
                 'current_session_id' => $sessionId,
                 'ultimo_login_at' => now(),
+                'ultima_actividad_at' => now(),
                 'ultimo_login_ip' => $request->ip(),
             ]);
 
@@ -118,6 +119,7 @@ class AutenticacionController extends Controller
         $usuario->update([
             'current_session_id' => $sessionId,
             'ultimo_login_at' => now(),
+            'ultima_actividad_at' => now(),
             'ultimo_login_ip' => $request->ip(),
         ]);
 
@@ -169,6 +171,7 @@ class AutenticacionController extends Controller
             $usuario->update([
                 'current_session_id' => $sessionId,
                 'ultimo_login_at' => now(),
+                'ultima_actividad_at' => now(),
                 'ultimo_login_ip' => $request->ip(),
             ]);
 
@@ -221,6 +224,7 @@ class AutenticacionController extends Controller
         $usuario->update([
             'current_session_id' => $sessionId,
             'ultimo_login_at' => now(),
+            'ultima_actividad_at' => now(),
             'ultimo_login_ip' => $request->ip(),
         ]);
 

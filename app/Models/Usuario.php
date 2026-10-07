@@ -26,6 +26,7 @@ class Usuario extends Authenticatable
         'esta_activo',
         'current_session_id',
         'ultimo_login_at',
+        'ultima_actividad_at',
         'ultimo_login_ip',
     ];
 
@@ -37,6 +38,7 @@ class Usuario extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'ultimo_login_at' => 'datetime',
+        'ultima_actividad_at' => 'datetime',
         'password' => 'hashed',
         'esta_activo' => 'boolean',
     ];
@@ -48,12 +50,17 @@ class Usuario extends Authenticatable
 
     public function estaEnLinea(): bool
     {
-        if (empty($this->current_session_id) || empty($this->ultimo_login_at)) {
+        if (empty($this->current_session_id)) {
+            return false;
+        }
+
+        $referencia = $this->ultima_actividad_at ?? $this->ultimo_login_at;
+        if (empty($referencia)) {
             return false;
         }
 
         // Si su última actividad o login fue dentro de los últimos 15 minutos
-        return $this->ultimo_login_at->diffInMinutes(now()) <= 15;
+        return $referencia->diffInMinutes(now()) <= 15;
     }
 
     public function taller(): BelongsTo

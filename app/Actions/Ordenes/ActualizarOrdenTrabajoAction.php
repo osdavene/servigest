@@ -61,8 +61,10 @@ final class ActualizarOrdenTrabajoAction
                 $this->procesarFotoCierre($orden, $fotoCierre, $descripcionFoto);
             }
 
-            // 6. Notificación automática si cambió de estado
-            \App\Services\WhatsAppNotificationService::enviarNotificacionAutomatica($orden, 'cambio_estado');
+            // 6. Notificación automática si cambió de estado (despachada fuera de la transacción para no retener bloqueos de BD)
+            DB::afterCommit(function () use ($orden) {
+                \App\Services\WhatsAppNotificationService::enviarNotificacionAutomatica($orden, 'cambio_estado');
+            });
 
             return $orden->fresh(['cliente', 'equipo', 'tecnico', 'evidencias']);
         });

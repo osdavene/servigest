@@ -46,8 +46,10 @@ final class CrearOrdenTrabajoAction
                 ]);
             }
 
-            // Notificación automática si está configurada
-            \App\Services\WhatsAppNotificationService::enviarNotificacionAutomatica($orden, 'creada');
+            // Notificación automática si está configurada (despachada fuera de la transacción para no retener bloqueos de BD)
+            DB::afterCommit(function () use ($orden) {
+                \App\Services\WhatsAppNotificationService::enviarNotificacionAutomatica($orden, 'creada');
+            });
 
             return $orden;
         });

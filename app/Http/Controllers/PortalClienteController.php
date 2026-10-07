@@ -82,13 +82,9 @@ class PortalClienteController extends Controller
             ->where('cliente_id', $cliente->id)
             ->firstOrFail();
 
-        // Generar código de orden correlativo
-        $ultimoId = OrdenTrabajo::withoutGlobalScopes()
-            ->where('taller_id', $taller->id)
-            ->max('id') ?? 0;
-
+        // Generar código de orden correlativo por taller
         $prefijo = $taller->prefijo_orden ?: 'OT';
-        $codigoOrden = sprintf('%s-%05d', $prefijo, $ultimoId + 1);
+        $codigoOrden = OrdenTrabajo::generarSiguienteCodigo((int) $taller->id, $prefijo);
 
         $orden = OrdenTrabajo::withoutGlobalScopes()->create([
             'taller_id' => $taller->id,

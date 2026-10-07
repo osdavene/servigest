@@ -50,6 +50,43 @@ class OrdenTrabajo extends Model
         'fecha_firma' => 'datetime',
     ];
 
+    /**
+     * Genera de forma segura el siguiente código correlativo único por taller.
+     */
+    public static function generarSiguienteCodigo(int $tallerId, string $prefijo = 'OT'): string
+    {
+        $ultimaOrden = static::withoutGlobalScopes()
+            ->withTrashed()
+            ->where('taller_id', $tallerId)
+            ->latest('id')
+            ->first();
+
+        $siguienteNumero = 1;
+
+        if ($ultimaOrden && !empty($ultimaOrden->codigo_orden)) {
+            if (preg_match('/(\d+)$/', $ultimaOrden->codigo_orden, $matches)) {
+                $siguienteNumero = ((int) $matches[1]) + 1;
+            } else {
+                $siguienteNumero = static::withoutGlobalScopes()->withTrashed()->where('taller_id', $tallerId)->count() + 1;
+            }
+        }
+
+        do {
+            $codigoCandidato = sprintf('%s-%05d', $prefijo, $siguienteNumero);
+            $existe = static::withoutGlobalScopes()
+                ->withTrashed()
+                ->where('taller_id', $tallerId)
+                ->where('codigo_orden', $codigoCandidato)
+                ->exists();
+
+            if ($existe) {
+                $siguienteNumero++;
+            }
+        } while ($existe);
+
+        return $codigoCandidato;
+    }
+
     protected static function booted()
     {
         static::creating(function ($orden) {
@@ -58,12 +95,8 @@ class OrdenTrabajo extends Model
             }
 
             if (empty($orden->codigo_orden)) {
-                $prefijo = $orden->taller?->prefijo_orden ?? 'OT';
-                $ultimoNumero = static::withoutGlobalScopes()
-                    ->where('taller_id', $orden->taller_id)
-                    ->max('id') ?? 0;
-                $consecutivo = str_pad($ultimoNumero + 1, 5, '0', STR_PAD_LEFT);
-                $orden->codigo_orden = "{$prefijo}-{$consecutivo}";
+                $prefijo = $orden->taller?->prefijo_orden ?: 'OT';
+                $orden->codigo_orden = static::generarSiguienteCodigo((int) $orden->taller_id, $prefijo);
             }
 
             if (empty($orden->fecha_ingreso)) {
