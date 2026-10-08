@@ -3,7 +3,7 @@
 @section('titulo', 'Orden de Servicio ' . $orden->codigo_orden)
 
 @section('contenido')
-<div x-data="{ modalEvidencia: false, fotoModal: null }">
+<div x-data="{ modalEvidencia: false, fotoModal: null, modalAbono: false }">
 
     <!-- Encabezado Principal de la Orden y Botones Rápidos -->
     <div class="card" style="margin-bottom: 24px;">
@@ -224,21 +224,58 @@
                     @endif
                 </div>
 
-                <!-- Liquidación Económica -->
-                <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px;">
-                    <div style="padding: 14px; background: #f8fafc; border-radius: 14px; text-align: center; border: 1px solid var(--border);">
-                        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b;">Mano de Obra</span>
-                        <strong style="font-size: 16px; color: #0f172a; display: block; margin-top: 4px;">${{ number_format($orden->costo_mano_obra, 0, ',', '.') }}</strong>
+                <!-- Liquidación Económica y Estado de Pagos -->
+                <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">
+                            Liquidación Económica del Servicio
+                        </span>
+                        <div>
+                            @if($orden->estado_pago === 'pagado')
+                                <span class="badge badge-active" style="font-size: 11px; padding: 4px 10px;">
+                                    <i class="fa-solid fa-circle-check"></i> Pagado Totalmente
+                                </span>
+                            @elseif($orden->estado_pago === 'abono_parcial')
+                                <span class="badge" style="background: #fef3c7; color: #b45309; border-color: #fde68a; font-size: 11px; padding: 4px 10px;">
+                                    <i class="fa-solid fa-coins"></i> Abono Parcial Recibido
+                                </span>
+                            @elseif($orden->estado_pago === 'sin_costo')
+                                <span class="badge badge-slate" style="font-size: 11px; padding: 4px 10px;">
+                                    <i class="fa-solid fa-hand-holding-dollar"></i> Sin Costo
+                                </span>
+                            @else
+                                <span class="badge badge-danger" style="font-size: 11px; padding: 4px 10px;">
+                                    <i class="fa-solid fa-clock"></i> Pendiente de Pago
+                                </span>
+                            @endif
+                        </div>
                     </div>
 
-                    <div style="padding: 14px; background: #f8fafc; border-radius: 14px; text-align: center; border: 1px solid var(--border);">
-                        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b;">Repuestos</span>
-                        <strong style="font-size: 16px; color: #0f172a; display: block; margin-top: 4px;">${{ number_format($orden->costo_repuestos, 0, ',', '.') }}</strong>
-                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                        <div style="padding: 12px; background: #f8fafc; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
+                            <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b;">Mano de Obra</span>
+                            <strong style="font-size: 15px; color: #0f172a; display: block; margin-top: 2px;">${{ number_format($orden->costo_mano_obra, 0, ',', '.') }}</strong>
+                        </div>
 
-                    <div style="padding: 14px; background: #ecfdf5; border-radius: 14px; text-align: center; border: 1.5px solid #a7f3d0;">
-                        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #065f46;">Total Servicio</span>
-                        <strong style="font-size: 20px; color: #047857; display: block; margin-top: 2px;">${{ number_format($orden->costo_total, 0, ',', '.') }}</strong>
+                        <div style="padding: 12px; background: #f8fafc; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
+                            <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b;">Repuestos</span>
+                            <strong style="font-size: 15px; color: #0f172a; display: block; margin-top: 2px;">${{ number_format($orden->costo_repuestos, 0, ',', '.') }}</strong>
+                        </div>
+
+                        <div style="padding: 12px; background: #f1f5f9; border-radius: 12px; text-align: center; border: 1.5px solid #cbd5e1;">
+                            <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #334155;">Total Cobrado</span>
+                            <strong style="font-size: 16px; color: #0f172a; display: block; margin-top: 2px;">${{ number_format($orden->costo_total, 0, ',', '.') }}</strong>
+                        </div>
+
+                        <div style="padding: 12px; background: #ecfdf5; border-radius: 12px; text-align: center; border: 1.5px solid #a7f3d0;">
+                            <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #065f46;">Total Abonado</span>
+                            <strong style="font-size: 16px; color: #047857; display: block; margin-top: 2px;">${{ number_format($orden->total_abonado, 0, ',', '.') }}</strong>
+                        </div>
+
+                        <div style="padding: 12px; background: {{ $orden->saldo_pendiente > 0 ? '#fff1f2' : '#f0fdf4' }}; border-radius: 12px; text-align: center; border: 1.5px solid {{ $orden->saldo_pendiente > 0 ? '#fecdd3' : '#bbf7d0' }};">
+                            <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: {{ $orden->saldo_pendiente > 0 ? '#9f1239' : '#166534' }};">Saldo Pendiente</span>
+                            <strong style="font-size: 17px; color: {{ $orden->saldo_pendiente > 0 ? '#e11d48' : '#15803d' }}; display: block; margin-top: 2px;">${{ number_format($orden->saldo_pendiente, 0, ',', '.') }}</strong>
+                        </div>
                     </div>
                 </div>
 
@@ -254,6 +291,92 @@
                         </div>
 
                         <img src="{{ $orden->url_firma_cliente }}" alt="Firma Cliente" style="max-height: 60px; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 4px;">
+                    </div>
+                @endif
+            </div>
+
+            <!-- Control Interno de Abonos y Pagos (No-DIAN) -->
+            <div class="card" style="margin-bottom: 0;">
+                <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h3 style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-money-bill-transfer" style="color: #10b981;"></i>
+                            <span>Control Interno de Abonos y Pagos ({{ $orden->pagos->count() }})</span>
+                        </h3>
+                        <p style="font-size: 12px; color: #64748b;">
+                            Registro de anticipos y liquidaciones para control de caja del taller (Sin efectos tributarios ni DIAN).
+                        </p>
+                    </div>
+
+                    <button @click="modalAbono = true" class="btn btn-emerald" style="font-size: 12.5px; padding: 8px 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>Registrar Abono / Pago</span>
+                    </button>
+                </div>
+
+                @if($orden->pagos->isEmpty())
+                    <div style="text-align: center; padding: 24px 16px; background: #f8fafc; border: 1.5px dashed var(--border); border-radius: 14px;">
+                        <i class="fa-solid fa-hand-holding-dollar" style="font-size: 32px; color: #94a3b8; margin-bottom: 8px; display: block;"></i>
+                        <strong style="font-size: 13.5px; color: #475569;">No se han registrado abonos en esta orden</strong>
+                        <p style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                            Si el cliente dejó un anticipo para repuestos o liquidó contra entrega, regístralo aquí.
+                        </p>
+                        <button @click="modalAbono = true" class="btn btn-outline" style="margin-top: 12px; font-size: 12px; padding: 6px 14px;">
+                            <i class="fa-solid fa-plus"></i> Registrar Primer Abono
+                        </button>
+                    </div>
+                @else
+                    <div style="overflow-x: auto;">
+                        <table class="table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="background: #f8fafc; border-bottom: 1px solid var(--border); text-align: left;">
+                                    <th style="padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: #64748b;">Fecha / Hora</th>
+                                    <th style="padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: #64748b;">Monto Abonado</th>
+                                    <th style="padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: #64748b;">Medio de Pago</th>
+                                    <th style="padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: #64748b;">Referencia / Comprobante</th>
+                                    <th style="padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: #64748b;">Detalle / Concepto</th>
+                                    <th style="padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: #64748b;">Recibido Por</th>
+                                    <th style="padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: #64748b; text-align: right;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($orden->pagos as $pago)
+                                    <tr style="border-bottom: 1px solid var(--border);">
+                                        <td style="padding: 10px 12px; color: #334155; white-space: nowrap;">
+                                            <i class="fa-regular fa-clock" style="color: #94a3b8; margin-right: 4px;"></i>
+                                            {{ $pago->fecha_pago ? $pago->fecha_pago->format('d/m/Y h:i A') : $pago->created_at->format('d/m/Y h:i A') }}
+                                        </td>
+                                        <td style="padding: 10px 12px; font-weight: 800; color: #047857; white-space: nowrap;">
+                                            + ${{ number_format($pago->monto, 0, ',', '.') }}
+                                        </td>
+                                        <td style="padding: 10px 12px;">
+                                            <span class="badge" style="background: {{ $pago->bg_metodo }}; color: {{ $pago->color_metodo }}; border-color: {{ $pago->color_metodo }}33; font-size: 11px; padding: 4px 8px;">
+                                                <i class="fa-solid {{ $pago->icono_metodo }}" style="margin-right: 4px;"></i>
+                                                {{ $pago->nombre_metodo }}
+                                            </span>
+                                        </td>
+                                        <td style="padding: 10px 12px; color: #475569;">
+                                            {{ $pago->referencia ?: '—' }}
+                                        </td>
+                                        <td style="padding: 10px 12px; color: #64748b; font-size: 12px;">
+                                            {{ $pago->notas ?: 'Abono a orden' }}
+                                        </td>
+                                        <td style="padding: 10px 12px; color: #334155; font-size: 12px;">
+                                            {{ $pago->usuario?->nombre ?? 'Usuario Taller' }}
+                                        </td>
+                                        <td style="padding: 10px 12px; text-align: right;">
+                                            <form method="POST" action="{{ route('ordenes.pagos.destroy', $pago) }}" onsubmit="return confirm('¿Confirmas que deseas anular este abono de ${{ number_format($pago->monto, 0, ',', '.') }}?');" style="display: inline;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px; color: #dc2626; border-color: #fca5a5;" title="Anular este registro de pago">
+                                                    <i class="fa-solid fa-trash-can"></i> Anular
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 @endif
             </div>
@@ -409,6 +532,90 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- Modal para Registrar Nuevo Abono o Pago (No-DIAN) -->
+    <div x-show="modalAbono" 
+         x-cloak 
+         @keydown.escape.window="modalAbono = false"
+         style="position: fixed; inset: 0; z-index: 110; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+        
+        <div @click.away="modalAbono = false" class="card" style="max-width: 520px; width: 100%; margin: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);">
+            <div class="card-header" style="margin-bottom: 16px; padding-bottom: 12px;">
+                <div>
+                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-money-bill-wave" style="color: #10b981;"></i>
+                        <span>Registrar Abono o Pago</span>
+                    </h3>
+                    <p style="font-size: 12px; color: #64748b;">Orden #{{ $orden->codigo_orden }} • Control Operativo Interno</p>
+                </div>
+                <button type="button" @click="modalAbono = false" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Resumen actual de costos y saldos -->
+            <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 10.5px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block;">Total del Servicio</span>
+                    <strong style="font-size: 15px; color: #0f172a;">${{ number_format($orden->costo_total, 0, ',', '.') }}</strong>
+                </div>
+                <div>
+                    <span style="font-size: 10.5px; text-transform: uppercase; color: #065f46; font-weight: 700; display: block;">Total Abonado</span>
+                    <strong style="font-size: 15px; color: #047857;">${{ number_format($orden->total_abonado, 0, ',', '.') }}</strong>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 10.5px; text-transform: uppercase; color: #9f1239; font-weight: 700; display: block;">Saldo Pendiente</span>
+                    <strong style="font-size: 16px; color: #e11d48;">${{ number_format($orden->saldo_pendiente, 0, ',', '.') }}</strong>
+                </div>
+            </div>
+
+            <form action="{{ route('ordenes.pagos.store', $orden) }}" method="POST">
+                @csrf
+
+                <div class="form-group">
+                    <label class="form-label">Monto del Abono / Pago (COP) *</label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: #64748b;">$</span>
+                        <input type="number" id="inputMontoAbono" name="monto" value="{{ $orden->saldo_pendiente > 0 ? (int)$orden->saldo_pendiente : '' }}" step="100" min="100" required class="form-input-text" style="padding-left: 28px; font-size: 16px; font-weight: 800; color: #047857;" placeholder="0">
+                    </div>
+                    @if($orden->saldo_pendiente > 0)
+                        <span style="font-size: 11px; color: #0284c7; margin-top: 4px; display: block; cursor: pointer;" onclick="document.getElementById('inputMontoAbono').value = '{{ (int)$orden->saldo_pendiente }}'">
+                            <i class="fa-solid fa-arrow-turn-down"></i> Clic para liquidar el saldo total (${{ number_format($orden->saldo_pendiente, 0, ',', '.') }})
+                        </span>
+                    @endif
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Medio de Pago *</label>
+                    <select name="metodo_pago" required class="form-input-text">
+                        <option value="efectivo">💵 Efectivo (Caja del Taller)</option>
+                        <option value="nequi">🟣 Nequi</option>
+                        <option value="daviplata">🔴 Daviplata</option>
+                        <option value="transferencia_bancaria">🏦 Transferencia Bancaria (Bancolombia, etc.)</option>
+                        <option value="tarjeta">💳 Datáfono / Tarjeta Débito o Crédito</option>
+                        <option value="otro">📎 Otro Medio</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Referencia / N° de Comprobante (Opcional)</label>
+                    <input type="text" name="referencia" placeholder="Ej. Aprobación Nequi M123456 o voucher datáfono" class="form-input-text">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Concepto / Notas (Opcional)</label>
+                    <input type="text" name="notas" placeholder="Ej. Anticipo para repuestos / Liquidación contra entrega" class="form-input-text">
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border);">
+                    <button type="button" @click="modalAbono = false" class="btn btn-outline">Cancelar</button>
+                    <button type="submit" class="btn btn-emerald" style="padding: 10px 20px;">
+                        <i class="fa-solid fa-check"></i> Registrar Abono
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

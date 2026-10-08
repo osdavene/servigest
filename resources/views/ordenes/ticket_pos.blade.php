@@ -207,7 +207,7 @@
 
         <div class="double-divider"></div>
 
-        <!-- Liquidación de Costos -->
+        <!-- Liquidación de Costos y Control de Pagos -->
         <div class="row">
             <span>Mano de Obra:</span>
             <span>${{ number_format($orden->costo_mano_obra, 0, ',', '.') }}</span>
@@ -216,9 +216,22 @@
             <span>Repuestos:</span>
             <span>${{ number_format($orden->costo_repuestos, 0, ',', '.') }}</span>
         </div>
-        <div class="row bold" style="font-size: {{ $anchoPapel == '58' ? '13px' : '15px' }}; margin-top: 4px;">
-            <span>TOTAL:</span>
+        <div class="row bold" style="font-size: {{ $anchoPapel == '58' ? '12px' : '14px' }}; margin-top: 2px;">
+            <span>TOTAL SERVICIO:</span>
             <span>${{ number_format($orden->costo_total, 0, ',', '.') }}</span>
+        </div>
+        @if($orden->total_abonado > 0)
+            <div class="row" style="color: #047857;">
+                <span>Total Abonado:</span>
+                <span>-${{ number_format($orden->total_abonado, 0, ',', '.') }}</span>
+            </div>
+        @endif
+        <div class="row bold" style="font-size: {{ $anchoPapel == '58' ? '13px' : '15px' }}; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #000;">
+            <span>SALDO PENDIENTE:</span>
+            <span>${{ number_format($orden->saldo_pendiente, 0, ',', '.') }}</span>
+        </div>
+        <div class="text-center" style="font-size: 8px; margin-top: 4px; color: #475569; font-style: italic;">
+            * CONTROL INTERNO DE TALLER - NO VÁLIDO COMO FACTURA TRIBUTARIA
         </div>
 
         <div class="divider"></div>

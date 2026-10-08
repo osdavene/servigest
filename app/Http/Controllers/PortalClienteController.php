@@ -22,7 +22,12 @@ class PortalClienteController extends Controller
     {
         $cliente = Cliente::withoutGlobalScopes()
             ->where('token_portal', $token)
-            ->with(['taller', 'equipos.categoria'])
+            ->with([
+                'taller',
+                'equipos' => fn ($q) => $q->withoutGlobalScopes()->with([
+                    'categoria' => fn ($cq) => $cq->withoutGlobalScopes()
+                ]),
+            ])
             ->firstOrFail();
 
         $taller = $cliente->taller;
@@ -30,7 +35,14 @@ class PortalClienteController extends Controller
         // Órdenes del cliente
         $ordenes = OrdenTrabajo::withoutGlobalScopes()
             ->where('cliente_id', $cliente->id)
-            ->with(['equipo.categoria', 'tecnico', 'evidencias'])
+            ->with([
+                'equipo' => fn ($q) => $q->withoutGlobalScopes()->with([
+                    'categoria' => fn ($cq) => $cq->withoutGlobalScopes()
+                ]),
+                'tecnico',
+                'evidencias',
+                'pagos' => fn ($pq) => $pq->withoutGlobalScopes(),
+            ])
             ->latest('id')
             ->get();
 

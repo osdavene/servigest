@@ -77,6 +77,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/ordenes/{orden}/evidencias', [EvidenciaFotograficaController::class, 'store'])->name('evidencias.store');
         Route::delete('/evidencias/{evidencia}', [EvidenciaFotograficaController::class, 'destroy'])->name('evidencias.destroy');
 
+        // Control Interno de Abonos y Pagos (No-DIAN)
+        Route::post('/ordenes/{orden}/pagos', [\App\Http\Controllers\PagoOrdenController::class, 'store'])->name('ordenes.pagos.store');
+        Route::delete('/pagos/{pago}', [\App\Http\Controllers\PagoOrdenController::class, 'destroy'])->name('ordenes.pagos.destroy');
+
         // Módulos Exclusivos para Administradores del Taller
         Route::middleware('rol:administrador')->group(function () {
             // Informes, Estadísticas y Analíticas Gerenciales

@@ -130,6 +130,49 @@ class OrdenTrabajo extends Model
         return $this->hasMany(EvidenciaFotografica::class, 'orden_trabajo_id');
     }
 
+    public function pagos(): HasMany
+    {
+        return $this->hasMany(PagoOrden::class, 'orden_trabajo_id')->orderBy('fecha_pago', 'desc');
+    }
+
+    public function getTotalAbonadoAttribute(): float
+    {
+        return (float) ($this->relationLoaded('pagos') ? $this->pagos->sum('monto') : $this->pagos()->sum('monto'));
+    }
+
+    public function getSaldoPendienteAttribute(): float
+    {
+        return max(0, (float) $this->costo_total - $this->total_abonado);
+    }
+
+    public function getEstadoPagoAttribute(): string
+    {
+        $costo = (float) $this->costo_total;
+        $abonado = $this->total_abonado;
+
+        if ($costo <= 0) {
+            return 'sin_costo';
+        }
+        if ($abonado <= 0) {
+            return 'pendiente';
+        }
+        if ($abonado < $costo) {
+            return 'abono_parcial';
+        }
+        return 'pagado';
+    }
+
+    public function getTextoEstadoPagoAttribute(): string
+    {
+        return match ($this->estado_pago) {
+            'sin_costo' => 'Sin Costo',
+            'pendiente' => 'Pendiente de Pago',
+            'abono_parcial' => 'Abono Parcial',
+            'pagado' => 'Pagado Totalmente',
+            default => 'Pendiente',
+        };
+    }
+
     public function getUrlPublicaReporteAttribute(): string
     {
         $token = $this->token_publico_pdf ?: 'sin-token';

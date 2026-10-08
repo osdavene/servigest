@@ -146,25 +146,7 @@
             </button>
         </form>
 
-        <!-- Selector Rápido de Cuentas Demo de Taller -->
-        <div class="demo-section">
-            <p class="demo-title">
-                <i class="fa-solid fa-wand-magic-sparkles" style="color: #0284c7; margin-right: 4px;"></i> 
-                Cuentas de Demostración
-            </p>
-            
-            <div class="demo-grid" style="grid-template-columns: 1fr 1fr;">
-                <div class="demo-btn" onclick="document.getElementById('email').value='admin@electrotech.com'; document.getElementById('password').value='password123';">
-                    <i class="fa-solid fa-user-tie" style="color: #0284c7;"></i>
-                    <span class="btn-role">Admin Taller</span>
-                </div>
 
-                <div class="demo-btn" onclick="document.getElementById('email').value='diego@electrotech.com'; document.getElementById('password').value='password123';">
-                    <i class="fa-solid fa-screwdriver-wrench" style="color: #10b981;"></i>
-                    <span class="btn-role">Técnico Operativo</span>
-                </div>
-            </div>
-        </div>
 
     </div>
 

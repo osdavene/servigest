@@ -238,6 +238,26 @@
                     <strong style="font-size: 22px; font-weight: 900; color: #047857;" id="textoTotalServicio">$0</strong>
                 </div>
 
+                <!-- Abono Inicial Opcional al Recibir el Equipo -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fa-solid fa-hand-holding-dollar" style="color: #10b981;"></i> Anticipo / Abono Inicial Dejado ($ COP)
+                    </label>
+                    <input type="number" step="100" min="0" name="abono_inicial" value="{{ old('abono_inicial') }}" placeholder="0 (si el cliente dejó anticipo)" class="form-input-text" style="color: #047857; font-weight: 700;">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Medio de Pago del Anticipo</label>
+                    <select name="metodo_pago_abono" class="form-input-text">
+                        <option value="efectivo" {{ old('metodo_pago_abono') == 'efectivo' ? 'selected' : '' }}>💵 Efectivo (Caja)</option>
+                        <option value="nequi" {{ old('metodo_pago_abono') == 'nequi' ? 'selected' : '' }}>🟣 Nequi</option>
+                        <option value="daviplata" {{ old('metodo_pago_abono') == 'daviplata' ? 'selected' : '' }}>🔴 Daviplata</option>
+                        <option value="transferencia_bancaria" {{ old('metodo_pago_abono') == 'transferencia_bancaria' ? 'selected' : '' }}>🏦 Transferencia Bancaria</option>
+                        <option value="tarjeta" {{ old('metodo_pago_abono') == 'tarjeta' ? 'selected' : '' }}>💳 Datáfono / Tarjeta</option>
+                        <option value="otro" {{ old('metodo_pago_abono') == 'otro' ? 'selected' : '' }}>📎 Otro</option>
+                    </select>
+                </div>
+
             </div>
         </div>
 

@@ -16,7 +16,7 @@ class WhatsAppNotificationService
     public static function enviarNotificacionAutomatica(OrdenTrabajo $orden, string $evento = 'cambio_estado'): bool
     {
         $taller = $orden->taller;
-        $cliente = $orden->cliente;
+        $cliente = $orden->relationLoaded('cliente') && $orden->cliente ? $orden->cliente : $orden->cliente()->withoutGlobalScopes()->first();
 
         if (!$taller || !$cliente || !$taller->whatsapp_auto_notify_enabled || empty($cliente->telefono)) {
             return false;
@@ -56,8 +56,8 @@ class WhatsAppNotificationService
     public static function construirMensaje(OrdenTrabajo $orden, string $evento): string
     {
         $taller = $orden->taller;
-        $cliente = $orden->cliente;
-        $equipo = $orden->equipo;
+        $cliente = $orden->relationLoaded('cliente') && $orden->cliente ? $orden->cliente : $orden->cliente()->withoutGlobalScopes()->first();
+        $equipo = $orden->relationLoaded('equipo') && $orden->equipo ? $orden->equipo : $orden->equipo()->withoutGlobalScopes()->first();
 
         $plantilla = match ($orden->estado) {
             'en_proceso' => $taller->whatsapp_template_en_proceso ?: 'Hola {cliente}, su equipo {equipo} ya está *EN REVISIÓN TÉCNICA* en {taller}. Orden #{codigo_orden}. Puede ver el avance aquí: {enlace_seguimiento}',

@@ -28,6 +28,10 @@ class CloudinaryService
      */
     public function subirImagen(UploadedFile|string $archivo, string $carpeta = 'servigest/general', ?string $publicId = null): ?string
     {
+        if (app()->environment('testing')) {
+            return null;
+        }
+
         if (empty($this->cloudName) || empty($this->apiKey) || empty($this->apiSecret)) {
             Log::warning('Cloudinary credentials missing, upload aborted.');
             return null;

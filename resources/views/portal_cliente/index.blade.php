@@ -343,7 +343,7 @@
                                 <th>Equipo</th>
                                 <th>Estado</th>
                                 <th>Técnico</th>
-                                <th>Total</th>
+                                <th>Costo / Saldo</th>
                                 <th style="text-align: right;">Acciones</th>
                             </tr>
                         </thead>
@@ -368,7 +368,20 @@
                                         @endif
                                     </td>
                                     <td>{{ $ot->tecnico?->nombre ?? 'Por Asignar' }}</td>
-                                    <td style="font-weight: 800;">${{ number_format($ot->costo_total, 0, ',', '.') }}</td>
+                                    <td>
+                                        <div style="font-weight: 800;">${{ number_format($ot->costo_total, 0, ',', '.') }}</div>
+                                        @if($ot->costo_total > 0)
+                                            @if($ot->saldo_pendiente <= 0)
+                                                <span style="font-size: 10px; font-weight: 700; color: #16a34a; display: block; margin-top: 2px;">
+                                                    <i class="fa-solid fa-circle-check"></i> Pagado
+                                                </span>
+                                            @else
+                                                <span style="font-size: 10px; font-weight: 700; color: #dc2626; display: block; margin-top: 2px;">
+                                                    Saldo: ${{ number_format($ot->saldo_pendiente, 0, ',', '.') }}
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </td>
                                     <td style="text-align: right;">
                                         <a href="{{ route('ordenes.publico', $ot->token_publico_pdf) }}" target="_blank" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">
                                             <i class="fa-solid fa-eye"></i>

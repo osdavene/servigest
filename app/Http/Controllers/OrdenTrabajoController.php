@@ -27,7 +27,7 @@ class OrdenTrabajoController extends Controller
         $tipoUbicacion = $request->input('tipo_ubicacion');
         $busqueda = trim((string)$request->input('buscar'));
 
-        $ordenes = OrdenTrabajo::with(['cliente:id,nombre_completo,identificacion,telefono', 'equipo:id,marca,modelo,numero_serie', 'tecnico:id,nombre,apellido'])
+        $ordenes = OrdenTrabajo::with(['cliente:id,nombre_completo,identificacion,telefono', 'equipo:id,marca,modelo,numero_serie', 'tecnico:id,nombre,apellido', 'pagos:id,orden_trabajo_id,monto'])
             ->when($estado, fn($q, $e) => $q->where('estado', $e))
             ->when($tecnicoId, fn($q, $t) => $q->where('tecnico_asignado_id', $t))
             ->when($tipoUbicacion, fn($q, $u) => $q->where('tipo_ubicacion', $u))
@@ -98,7 +98,7 @@ class OrdenTrabajoController extends Controller
     {
         $this->authorize('view', $orden);
 
-        $orden->load(['cliente', 'equipo.categoria', 'tecnico', 'evidencias']);
+        $orden->load(['cliente', 'equipo.categoria', 'tecnico', 'evidencias', 'pagos.usuario']);
 
         return view('ordenes.ver', compact('orden'));
     }

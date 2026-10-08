@@ -122,7 +122,22 @@
                                 @endif
                             </td>
                             <td>
-                                <strong style="font-size: 14px; color: #0f172a;">${{ number_format($orden->costo_total, 0, ',', '.') }}</strong>
+                                <strong style="font-size: 14px; color: #0f172a; display: block;">${{ number_format($orden->costo_total, 0, ',', '.') }}</strong>
+                                @if($orden->costo_total > 0)
+                                    @if($orden->saldo_pendiente <= 0)
+                                        <span style="font-size: 10px; font-weight: 700; color: #047857; display: inline-flex; align-items: center; gap: 3px;">
+                                            <i class="fa-solid fa-check"></i> Pagado
+                                        </span>
+                                    @elseif($orden->total_abonado > 0)
+                                        <span style="font-size: 10px; font-weight: 700; color: #b45309; display: inline-flex; align-items: center; gap: 3px;">
+                                            <i class="fa-solid fa-coins"></i> Debe ${{ number_format($orden->saldo_pendiente, 0, ',', '.') }}
+                                        </span>
+                                    @else
+                                        <span style="font-size: 10px; font-weight: 600; color: #e11d48; display: inline-flex; align-items: center; gap: 3px;">
+                                            <i class="fa-solid fa-clock"></i> Pendiente
+                                        </span>
+                                    @endif
+                                @endif
                             </td>
                             <td style="text-align: right;">
                                 <div style="display: inline-flex; gap: 6px;">

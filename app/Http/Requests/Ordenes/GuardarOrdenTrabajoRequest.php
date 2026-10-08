@@ -47,6 +47,9 @@ class GuardarOrdenTrabajoRequest extends FormRequest
             'fecha_promesa' => ['nullable', 'date'],
             'costo_mano_obra' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'costo_repuestos' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'abono_inicial' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'metodo_pago_abono' => ['nullable', 'string', 'in:efectivo,nequi,daviplata,transferencia_bancaria,tarjeta,otro'],
+            'referencia_abono' => ['nullable', 'string', 'max:100'],
             'foto_inicial' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:15360'], // 15MB max
         ];
     }

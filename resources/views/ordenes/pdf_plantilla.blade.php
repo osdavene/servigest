@@ -224,8 +224,8 @@
         <div class="caja-texto">{{ $orden->procedimiento_realizado }}</div>
     @endif
 
-    <!-- Liquidación Económica -->
-    <div class="seccion-titulo">Liquidación de Costos</div>
+    <!-- Liquidación Económica y Control de Pagos -->
+    <div class="seccion-titulo">Liquidación del Servicio y Control de Pagos</div>
     <table class="tabla-costos">
         <tr>
             <td>Mano de Obra y Servicios:</td>
@@ -239,7 +239,24 @@
             <td>TOTAL SERVICIO:</td>
             <td style="text-align: right;">${{ number_format($orden->costo_total, 0, ',', '.') }}</td>
         </tr>
+        @if($orden->total_abonado > 0)
+            <tr>
+                <td style="color: #047857; font-weight: bold;">(-) Anticipos y Abonos Recibidos:</td>
+                <td style="text-align: right; color: #047857; font-weight: bold;">-${{ number_format($orden->total_abonado, 0, ',', '.') }}</td>
+            </tr>
+        @endif
+        <tr style="background: #f8fafc; font-weight: bold; border-top: 1.5px solid #0f172a;">
+            <td style="font-size: 10px; color: {{ $orden->saldo_pendiente > 0 ? '#b91c1c' : '#15803d' }};">
+                SALDO PENDIENTE A CANCELAR:
+            </td>
+            <td style="text-align: right; font-size: 11px; color: {{ $orden->saldo_pendiente > 0 ? '#b91c1c' : '#15803d' }};">
+                ${{ number_format($orden->saldo_pendiente, 0, ',', '.') }}
+            </td>
+        </tr>
     </table>
+    <div style="font-size: 7.5px; color: #64748b; font-style: italic; margin-top: 4px; text-align: right;">
+        * Constancia técnica y control interno de taller — Documento no válido como factura tributaria.
+    </div>
 
     <!-- Firma del Cliente de Recibido / Conformidad -->
     <div style="margin-top: 20px; width: 100%;">

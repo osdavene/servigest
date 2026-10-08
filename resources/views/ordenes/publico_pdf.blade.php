@@ -101,10 +101,29 @@
             @endif
         </div>
 
-        <!-- Total Liquidado -->
-        <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-emerald-900">Total Liquidación del Servicio</span>
-            <span class="text-2xl font-black text-emerald-700">${{ number_format($orden->costo_total, 0, ',', '.') }}</span>
+        <!-- Liquidación y Saldo para el Cliente -->
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Total del Servicio:</span>
+                <span class="text-lg font-bold text-slate-800">${{ number_format($orden->costo_total, 0, ',', '.') }}</span>
+            </div>
+            @if($orden->total_abonado > 0)
+                <div class="flex items-center justify-between text-emerald-700">
+                    <span class="text-xs font-bold uppercase tracking-wider">Abonos Recibidos:</span>
+                    <span class="text-base font-bold">-${{ number_format($orden->total_abonado, 0, ',', '.') }}</span>
+                </div>
+            @endif
+            <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+                <span class="text-xs font-black uppercase tracking-wider {{ $orden->saldo_pendiente > 0 ? 'text-rose-700' : 'text-emerald-700' }}">
+                    {{ $orden->saldo_pendiente > 0 ? 'Saldo a Pagar al Retirar:' : 'Estado de Pago:' }}
+                </span>
+                <span class="text-2xl font-black {{ $orden->saldo_pendiente > 0 ? 'text-rose-600' : 'text-emerald-600' }}">
+                    {{ $orden->saldo_pendiente > 0 ? '$' . number_format($orden->saldo_pendiente, 0, ',', '.') : '¡PAGADO TOTAL!' }}
+                </span>
+            </div>
+            <div class="text-[10px] text-slate-400 text-center italic">
+                * Documento de control y seguimiento técnico interno — No constituye factura tributaria.
+            </div>
         </div>
 
         <!-- Evidencias Fotográficas -->

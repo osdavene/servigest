@@ -46,6 +46,21 @@ final class CrearOrdenTrabajoAction
                 ]);
             }
 
+            // Registrar abono o anticipo inicial si el cliente dejó un pago al ingresar
+            $abonoInicial = (float)($datos['abono_inicial'] ?? 0);
+            if ($abonoInicial > 0) {
+                \App\Models\PagoOrden::create([
+                    'taller_id' => $orden->taller_id,
+                    'orden_trabajo_id' => $orden->id,
+                    'usuario_id' => auth()->id(),
+                    'monto' => $abonoInicial,
+                    'metodo_pago' => $datos['metodo_pago_abono'] ?? 'efectivo',
+                    'referencia' => $datos['referencia_abono'] ?? null,
+                    'notas' => 'Anticipo inicial recibido al ingreso del equipo.',
+                    'fecha_pago' => now(),
+                ]);
+            }
+
             // Notificación automática si está configurada (despachada fuera de la transacción para no retener bloqueos de BD)
             DB::afterCommit(function () use ($orden) {
                 \App\Services\WhatsAppNotificationService::enviarNotificacionAutomatica($orden, 'creada');

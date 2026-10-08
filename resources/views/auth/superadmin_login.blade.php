@@ -146,21 +146,7 @@
             </button>
         </form>
 
-        <!-- Selector Rápido SuperAdmin -->
-        <div class="demo-section">
-            <p class="demo-title" style="color: #b45309;">
-                <i class="fa-solid fa-crown" style="color: #f59e0b; margin-right: 4px;"></i> 
-                Relleno Rápido de Demostración
-            </p>
-            
-            <div class="demo-grid" style="grid-template-columns: 1fr;">
-                <div class="demo-btn" onclick="document.getElementById('email').value='superadmin@servigest.com'; document.getElementById('password').value='password123';"
-                     style="background: #fffbeb; border-color: #fde68a;">
-                    <i class="fa-solid fa-crown" style="color: #d97706;"></i>
-                    <span class="btn-role" style="color: #78350f;">Super Administrador General</span>
-                </div>
-            </div>
-        </div>
+
 
     </div>
 
