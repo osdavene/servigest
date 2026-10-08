@@ -126,4 +126,29 @@ class Taller extends Model
 
         return asset('storage/' . $this->logo_ruta);
     }
+
+    /**
+     * Cifra el token de WhatsApp antes de almacenarlo en la base de datos.
+     */
+    public function setWhatsappApiTokenAttribute(?string $value): void
+    {
+        $this->attributes['whatsapp_api_token'] = !empty($value) ? encrypt($value) : null;
+    }
+
+    /**
+     * Descifra el token de WhatsApp o entrega el valor original en caso de registros previos en texto plano.
+     */
+    public function getWhatsappApiTokenAttribute($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        try {
+            return decrypt($value);
+        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            return $value;
+        }
+    }
 }
+

@@ -50,8 +50,8 @@
 
                 <div class="form-group">
                     <label class="form-label">Nueva Contraseña (Opcional)</label>
-                    <input type="password" name="password"
-                           class="form-input-text" placeholder="Dejar vacío para mantener la actual">
+                    <input type="password" name="password" minlength="8"
+                           class="form-input-text" placeholder="Dejar vacío o escribir mín. 8 caracteres">
                 </div>
 
                 <div class="form-group">

@@ -49,8 +49,8 @@
 
                 <div class="form-group">
                     <label class="form-label">Contraseña de Acceso *</label>
-                    <input type="password" name="password" required
-                           class="form-input-text" placeholder="Mínimo 6 caracteres">
+                    <input type="password" name="password" required minlength="8"
+                           class="form-input-text" placeholder="Mínimo 8 caracteres">
                 </div>
 
                 <div class="form-group">

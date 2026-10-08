@@ -96,7 +96,7 @@ class UsuarioTallerController extends Controller
             'apellido' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:150', 'unique:usuarios,email'],
             'telefono' => ['nullable', 'string', 'max:30'],
-            'password' => ['required', 'string', 'min:6'],
+            'password' => ['required', 'string', 'min:8'],
             'rol' => ['required', 'in:tecnico,administrador'],
         ], [
             'nombre.required' => 'El nombre es obligatorio.',
@@ -104,7 +104,7 @@ class UsuarioTallerController extends Controller
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.unique' => 'Este correo ya está registrado en el sistema.',
             'password.required' => 'La contraseña es obligatoria.',
-            'password.min' => 'La contraseña debe tener al menos 6 caracteres.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
             'rol.required' => 'Debe seleccionar un rol.',
         ]);
 
@@ -154,9 +154,11 @@ class UsuarioTallerController extends Controller
             'apellido' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:150', Rule::unique('usuarios', 'email')->ignore($personal->id)],
             'telefono' => ['nullable', 'string', 'max:30'],
-            'password' => ['nullable', 'string', 'min:6'],
+            'password' => ['nullable', 'string', 'min:8'],
             'rol' => ['required', 'in:tecnico,administrador'],
             'esta_activo' => ['nullable', 'boolean'],
+        ], [
+            'password.min' => 'La nueva contraseña debe tener al menos 8 caracteres.',
         ]);
 
         $datosActualizar = [

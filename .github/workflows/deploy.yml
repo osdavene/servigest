@@ -17,17 +17,21 @@ jobs:
       - name: 🔐 Ejecutar Despliegue en AWS vía SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.AWS_HOST }}
-          username: ${{ secrets.AWS_USER }}
+          host: ${{ secrets.AWS_HOST || 'servigestco.duckdns.org' }}
+          username: ${{ secrets.AWS_USER || 'ubuntu' }}
           key: ${{ secrets.AWS_SSH_KEY }}
           port: ${{ secrets.AWS_PORT || 22 }}
           script_stop: true
           script: |
-            echo "🚀 Iniciando despliegue de ServiGest en CloudPanel..."
-            cd ${{ secrets.AWS_PROJECT_PATH }}
+            TARGET_PATH="${{ secrets.AWS_PROJECT_PATH }}"
+            if [ -z "$TARGET_PATH" ]; then
+              TARGET_PATH="/home/servigest/htdocs/servigest.com"
+            fi
+            echo "🚀 Iniciando despliegue de ServiGest en $TARGET_PATH..."
+            cd "$TARGET_PATH"
 
             # Configurar directorio seguro para Git
-            sudo git config --global --add safe.directory ${{ secrets.AWS_PROJECT_PATH }}
+            sudo git config --global --add safe.directory "$TARGET_PATH"
 
             # 1. Descargar últimos cambios como usuario del sitio
             sudo -u servigest git fetch origin main
